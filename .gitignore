@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+
+# Data and model artefacts (rebuilt by the pipeline, never committed)
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+mlruns/
+mlflow.db
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Web console
+node_modules/
+web/dist/
+web/coverage/
+web/playwright-report/
+web/test-results/
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/*.tfvars
+!infra/*.tfvars.example
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
