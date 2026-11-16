@@ -19,8 +19,8 @@ until it is generated from an artefact by `make report`.
 | Phase | Scope | State |
 | --- | --- | --- |
 | 0 | Scaffold: tooling, settings, logging, Compose stores, CI | Done |
-| 1 | Data checks, PII handling, time splits, the single feature definition | Next |
-| 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | Planned |
+| 1 | Data checks, PII handling, time splits, the single feature definition | Done |
+| 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | Next |
 | 3 | Contributions and reason codes | Planned |
 | 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Planned |
 | 5 | React analyst console | Planned |
@@ -40,15 +40,63 @@ Requirements: [uv](https://docs.astral.sh/uv/), Docker with Compose, and GNU Mak
 ```bash
 make setup   # install locked dependencies, git hooks, and create .env from configs/.env.example
 make up      # start Postgres and Redis and wait until both are healthy
-make test    # unit tests with the 85% coverage gate
+make test    # unit, property and parity tests with the 85% coverage gate
+```
+
+Then build the data:
+
+```bash
+make data       # download both datasets, validate them, strip PII -> data/interim/
+make features   # build the feature tables -> data/processed/
+make test-data  # re-run the parity check on 5,000 real transactions
 ```
 
 Other targets: `make lint`, `make typecheck`, `make format`, `make down`, `make help`.
-The pipeline targets (`data`, `features`, `train`, `evaluate`, `serve`, `replay`, `load`,
-`report`, `all`) exist as stubs that fail with the phase they arrive in.
+The remaining pipeline targets (`train`, `evaluate`, `serve`, `replay`, `load`, `report`)
+are stubs that fail with the phase they arrive in.
 
-Without Make, run the underlying commands directly, for example
-`uv sync --locked` and `uv run pytest -m "not integration" --cov`.
+Without Make, run the underlying commands directly, for example `uv sync --locked`,
+`uv run python -m fraudlens.data.download` and
+`uv run pytest -m "not integration and not data" --cov`.
+
+## Data
+
+| Dataset | Role | Source |
+| --- | --- | --- |
+| Sparkov simulated card transactions | Primary: readable fields and two years of per-card history | [kartik2112/fraud-detection](https://www.kaggle.com/datasets/kartik2112/fraud-detection) |
+| ULB credit card fraud | Benchmark table only: its features are anonymous PCA components | [mlg-ulb/creditcardfraud](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) |
+
+Both are public and download without Kaggle credentials. The first download records a
+SHA-256 per file in `data/raw/SHA256SUMS.json`; later runs verify against it and fail if a
+raw file has changed.
+
+The Sparkov names, streets and card numbers are synthetic, and are handled as if real:
+
+- Names, street, city, state, zip code, job and date of birth are dropped at ingestion.
+- The card number becomes `card_id`, a keyed HMAC-SHA256 token. A plain hash is not
+  enough, because the card-number space is small enough to enumerate.
+- Age at the transaction is derived from the date of birth before it is dropped.
+- `gender` is kept for the offline fairness check only and is never a model feature.
+
+`notebooks/01_eda.ipynb` shows what the training partition looks like, including the
+finding that merchant coordinates are noise around the cardholder's home.
+
+## Features
+
+`src/fraudlens/features/definitions.py` holds the only definition of every feature:
+`compute_features(txn, history)`, which the scoring service will call per request.
+`src/fraudlens/features/batch.py` computes the same values for a whole table at once, for
+training. A parity test fails on any row where the two disagree.
+
+- Windows are closed on the left: a window ending at a transaction holds earlier
+  transactions only, and never the transaction itself.
+- Transactions in the same second are ordered by transaction id, in training and serving.
+- Window sums use integer cents, so the batch builder matches the definition exactly
+  rather than to a tolerance. Only the five features that pass through `log` or
+  trigonometric functions are compared to 1e-9.
+- Splits are by time: training, a 7-day gap, then validation cut 60/40 into a tuning
+  slice and a calibration slice. The public test partition is not read until the final
+  evaluation.
 
 ## Configuration
 
@@ -63,6 +111,7 @@ configs/          .env.example (training and cost configs arrive in phase 2)
 data/             gitignored: raw, interim and processed data
 models/           gitignored model bundles
 docs/             design notes, journal, performance reports
+notebooks/        01_eda.ipynb (results only; no logic lives in notebooks)
 src/fraudlens/
   common/         settings, logging, hashing, shared types
   data/           download, schema checks, PII handling, time splits

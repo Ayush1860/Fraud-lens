@@ -7,6 +7,11 @@ authors = [
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "kagglehub>=1.0.3",
+    "numpy>=2.5.5",
+    "pandas>=3.1.1",
+    "pandera>=0.36.0",
+    "pyarrow>=26.0.1",
     "pydantic>=2.14.3",
     "pydantic-settings>=2.16.3",
 ]
@@ -47,11 +52,17 @@ python_version = "3.12"
 files = ["src"]
 plugins = ["pydantic.mypy"]
 
+[[tool.mypy.overrides]]
+module = ["kagglehub"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
 markers = [
-    "integration: needs real Redis and Postgres (run with `make test-integration`)",
+    "integration: needs real Redis and Postgres",
+    "data: needs the real datasets built by `make data` and `make features`; skipped if absent",
 ]
 
 [tool.coverage.run]
@@ -65,9 +76,17 @@ skip_covered = true
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.170.15",
     "mypy>=2.4.1",
+    "pandas-stubs>=3.1.0.261029",
     "pre-commit>=4.7.0",
     "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.5",
+]
+notebooks = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "nbconvert>=7.17.2",
+    "nbformat>=5.11.1",
 ]
