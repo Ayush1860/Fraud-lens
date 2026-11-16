@@ -1,0 +1,73 @@
+[project]
+name = "fraudlens"
+version = "0.1.0"
+description = "Explainable real-time card-fraud scoring service"
+authors = [
+    { name = "Ayush", email = "ayushsuryawanshi9@gmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic>=2.14.3",
+    "pydantic-settings>=2.16.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",  # pycodestyle, pyflakes
+    "I",            # import order
+    "B",            # bugbear
+    "UP",           # modern syntax
+    "N",            # naming
+    "SIM", "C4",    # simplifications
+    "PT",           # pytest style
+    "ANN",          # type hints on every function
+    "D",            # docstrings on every public object
+    "S",            # security lints
+    "RUF",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src"]
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+    "integration: needs real Redis and Postgres (run with `make test-integration`)",
+]
+
+[tool.coverage.run]
+source = ["fraudlens"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_covered = true
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.5",
+]
