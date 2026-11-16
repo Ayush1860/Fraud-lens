@@ -37,7 +37,7 @@ jobs:
       - run: uv run mypy
 
   test:
-    name: Unit tests and coverage gate
+    name: Unit, property and parity tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -45,7 +45,7 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
-      - run: uv run pytest -m "not integration" --cov --cov-report=term-missing
+      - run: uv run pytest -m "not integration and not data" --cov --cov-report=term-missing
 
   compose:
     name: Compose stores healthy

@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup lint format typecheck test up down \
+.PHONY: help setup lint format typecheck test test-data up down \
         data features train evaluate serve replay load report all
 
 help: ## List the available targets
@@ -21,8 +21,11 @@ format: ## Apply formatting and safe lint fixes
 typecheck: ## mypy --strict on src/
 	uv run mypy
 
-test: ## Unit tests with the coverage gate
-	uv run pytest -m "not integration" --cov --cov-report=term-missing
+test: ## Unit, property and parity tests with the coverage gate
+	uv run pytest -m "not integration and not data" --cov --cov-report=term-missing
+
+test-data: ## Checks that need the real datasets (run after `make data features`)
+	uv run pytest -m data
 
 up: ## Start Postgres and Redis and wait until both are healthy
 	docker compose up -d --wait
@@ -33,8 +36,12 @@ down: ## Stop the local stores (data volumes are kept)
 # --- Pipeline and service targets. Each is a stub until its phase lands, and fails
 # --- loudly so that nobody mistakes a stub for a successful run.
 
-data features: ## Phase 1: download, validate, strip PII, build features
-	@echo "make $@: not implemented yet (phase 1: data and features)"; exit 1
+data: ## Download the datasets, validate them, strip PII, write data/interim/
+	uv run python -m fraudlens.data.download
+	uv run python -m fraudlens.data.ingest
+
+features: ## Build the feature tables in data/processed/
+	uv run python -m fraudlens.features.batch
 
 train evaluate: ## Phase 2: experiments, tuning, calibration, evaluation
 	@echo "make $@: not implemented yet (phase 2: modelling and experiments)"; exit 1
