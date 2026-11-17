@@ -101,7 +101,8 @@ def drift_report(
                 "n_previous": len(base),
             }
         )
-    segments.sort(key=lambda s: -1.0 if s["psi"] is None else -float(s["psi"]))
+    # Largest PSI first; categories too small to judge go last.
+    segments.sort(key=lambda s: (s["psi"] is None, -float(s["psi"] or 0.0)))
 
     live_mix = dict.fromkeys(DECISION_KINDS, 0.0)
     mix_psi = None

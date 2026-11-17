@@ -188,3 +188,12 @@ def test_a_shifted_decision_mix_raises_an_alarm() -> None:
 
 def test_calendar_features_are_marked_cyclical() -> None:
     assert {"day_of_week", "is_weekend"} == set(CYCLICAL)
+
+
+def test_segments_are_ordered_by_psi_with_unjudged_ones_last() -> None:
+    latest = rows(4_000, seed=1, factor=1.5) + [{"amount": 10.0, "category": "rare"}] * 5
+    previous = rows(4_000, seed=2) + [{"amount": 10.0, "category": "rare"}] * 5
+
+    report = drift_report(latest, previous, [], reference=REFERENCE, validation_mix=VALIDATION_MIX)
+
+    assert [s["category"] for s in report["segments"]] == ["shop", "food", "rare"]
