@@ -9,8 +9,8 @@ import pytest
 import redis
 import sqlalchemy as sa
 
-from conftest import DEAD_DATABASE_URL, DEAD_REDIS_URL, ClientFactory
 from fraudlens.tools.replay import to_payload
+from integration_support import DEAD_DATABASE_URL, DEAD_REDIS_URL, ClientFactory
 from toy_bundle import toy_transactions
 
 pytestmark = [pytest.mark.integration, pytest.mark.anyio]

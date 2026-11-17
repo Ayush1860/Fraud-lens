@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import sqlalchemy as sa
-from conftest import ClientFactory
 
 from fraudlens.features.batch import build_features
 from fraudlens.features.definitions import FEATURE_NAMES
@@ -23,6 +22,7 @@ from fraudlens.features.encoding import encode_vector
 from fraudlens.tools.replay import to_payload
 from fraudlens.training.bundle import ModelBundle, logistic
 from helpers import values_match
+from integration_support import ClientFactory
 from toy_bundle import toy_transactions
 
 pytestmark = [pytest.mark.integration, pytest.mark.anyio]

@@ -6,8 +6,8 @@ Every test starts from empty tables and an empty Redis database.
 """
 
 import os
-from collections.abc import AsyncIterator, Callable, Iterator
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
@@ -20,12 +20,7 @@ from asgi_lifespan import LifespanManager
 
 from fraudlens.common.settings import Settings
 from fraudlens.service.app import create_app
-
-API_KEY = "integration-test-key"
-DEAD_REDIS_URL = "redis://127.0.0.1:1/0"
-DEAD_DATABASE_URL = "postgresql+asyncpg://nobody:nothing@127.0.0.1:1/none"
-
-ClientFactory = Callable[..., AbstractAsyncContextManager[httpx.AsyncClient]]
+from integration_support import API_KEY, ClientFactory
 
 
 @pytest.fixture(scope="session")
