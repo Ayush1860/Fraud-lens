@@ -11,6 +11,39 @@ response leaves.
 > **Simulated data.** The primary dataset (Sparkov) is generated, not real card traffic.
 > Scores on it demonstrate method and engineering, not real-world accuracy.
 
+## How it fits together
+
+A live transaction, left to right. The service is the only component that decides, and
+it writes the audit row before it answers.
+
+```mermaid
+flowchart LR
+    caller[Card network or replay client] -->|POST /v1/transactions/score| api[Scoring service]
+    api -->|claim id, lock card, read history| redis[(Redis: card history)]
+    api --> features[compute_features] --> model[XGBoost + calibrator + thresholds]
+    model -->|review or block only| reasons[Contributions and reason codes]
+    api -->|insert decision and alert| pg[(Postgres: append-only audit)]
+    api -->|append transaction| redis
+    console[Analyst console] -->|/api via nginx| api
+    pg -->|alerts, labels, drift report| console
+```
+
+A model release, top to bottom. Analyst labels in Postgres are what a future retrain
+would learn from.
+
+```mermaid
+flowchart TB
+    raw[Raw Sparkov files, SHA-256 pinned] --> ingest[Validate, strip PII, tokenise cards]
+    ingest --> batch[Batch features: same definition as serving]
+    batch --> split[Time-ordered split with a gap]
+    split --> study[Imbalance study, Optuna tuning]
+    study --> release[Fit, calibrate, choose thresholds by cost]
+    release --> bundle[Versioned bundle with SHA-256 manifest]
+    bundle --> test[One-time test evaluation]
+    bundle -->|verified at start-up| service[Scoring service]
+    test --> report[make report: README, model card, validation report]
+```
+
 ## Status
 
 The project is built in phases, one pull request each. Every metric in this README is
@@ -249,6 +282,21 @@ transaction flagged, and was the model right?
   server) forwards it to the service and adds the API key, so the browser never holds it.
 - **Decisions are never colour alone:** each has an icon and a word. Every screen has
   loading, empty and error states, and a permanent banner says the data is simulated.
+
+## Monitoring and documents
+
+- **Drift.** The service recomputes a drift report every minute from the audit trail:
+  each feature against its training histogram, amount within each category against the
+  previous window, and the decision mix against validation. Anything over a population
+  stability index of 0.25 raises an alarm on the console and in `/metrics`. Calendar
+  features are shown but never alarm, because a day of traffic cannot match a weekly
+  cycle. `docs/design.md` gives the measurements behind each choice.
+- **Load test.** `make load`, or the *Load test* workflow on a GitHub runner, drives the
+  service with Locust at 50, 200 and 500 requests per second and writes client latency
+  and the service's own per-stage timings to `docs/perf/`, with the machine it ran on.
+- **Documents.** [Model card](docs/model_card.md), [validation report](docs/validation_report.md),
+  [design notes](docs/design.md), [runbook](docs/runbook.md) and
+  [journal](docs/journal.md).
 
 ## Configuration
 
