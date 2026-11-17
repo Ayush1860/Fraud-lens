@@ -1,0 +1,41 @@
+# Serves the console and forwards /api to the scoring service.
+# The API key is added here, server side: the browser never sees it. Anyone who can reach
+# this port can therefore use the API through it, so it binds to loopback in Compose.
+server {
+    listen 8080;
+    server_tokens off;
+    root /usr/share/nginx/html;
+
+    location /api/ {
+        proxy_pass http://${FRAUDLENS_API_UPSTREAM}/;
+        proxy_set_header X-API-Key "${FRAUDLENS_API_KEY}";
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Host $host;
+        proxy_read_timeout 10s;
+    }
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Hashed file names: cache for a year.
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    location /data/ {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    # Client-side routes all serve the app shell.
+    location / {
+        add_header Cache-Control "no-cache";
+        add_header X-Content-Type-Options "nosniff";
+        add_header Referrer-Policy "no-referrer";
+        try_files $uri /index.html;
+    }
+}

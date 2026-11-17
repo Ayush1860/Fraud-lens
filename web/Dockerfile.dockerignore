@@ -1,0 +1,9 @@
+# Build context is the repository root; send only what the console image needs.
+*
+!web
+!docs/results/experiments.json
+web/node_modules
+web/dist
+web/public/data
+web/playwright-report
+web/test-results
