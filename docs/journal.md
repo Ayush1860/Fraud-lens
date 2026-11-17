@@ -246,3 +246,18 @@ Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
 - **Decision:** `make report` copies the release's result documents into
   `docs/results/release/`, then writes the README block, the model card and the validation
   report from committed files only. A test regenerates them and fails on any difference.
+- **Profile (load test, 1 worker):** throughput stopped near the same ceiling whatever rate
+  was offered, and every stage slowed together, Redis included: the event loop was starved.
+  Container sampling showed why: one uvicorn worker, a single Python thread, used several
+  CPUs. XGBoost starts an OpenMP thread per core even to score one row, and the threads
+  spin between requests.
+- **Surprise:** adding workers made it worse, not better. Three workers with an OpenMP
+  thread per core each oversubscribed the four CPUs; the model stage slowed sharply and
+  throughput fell below one worker's. The tempting fix (more processes) hid the real one.
+- **Fix:** `model_threads`, default 1, applied to the booster at start-up. With it one
+  worker stays near one CPU and three workers scale; `docs/perf/README.md` compares all
+  four runs. Each run landed on a different runner CPU, so the comparison rests on CPU
+  share and throughput ceiling, not on small latency differences.
+- **Bug (found by the first load test):** Locust exits non-zero when any request fails, and
+  the driver treated that as a crash and lost the run. The 503s were the service failing
+  closed when an audit write exceeded its 2-second budget under saturation: data to report.

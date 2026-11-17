@@ -74,6 +74,11 @@ Release `2026-11-17.1`, scored once on the public test file: 555,719 transaction
 | Precision of those alerts | 0.358 [0.319, 0.402] |
 | Expected cost per 1,000 transactions | $27.68, against $2,039.38 for approving everything |
 | Explanations | contributions add up to the margin within 2.5e-05 log-odds on 10,000 rows; top three reasons unchanged by a 1% amount change for 97.8% of 1,000 flagged rows |
+| Latency, 50 requests/s offered | 49 served; p50 22 ms, p95 200 ms, p99 450 ms |
+| Latency, 200 requests/s offered | 197 served; p50 36 ms, p95 170 ms, p99 330 ms |
+| Latency, 500 requests/s offered | 420 served; p50 190 ms, p95 370 ms, p99 520 ms |
+
+Latency: uvicorn, 3 worker(s), in Docker, `workers-3-762bbef`, on a GitHub Actions runner (AMD EPYC 9V74 80-Core Processor, 4 CPUs) with Postgres, Redis and the load generator on the same machine. Every configuration measured, before and after the fix, is compared in [docs/perf](docs/perf/README.md).
 <!-- report:end -->
 
 The model card ([docs/model_card.md](docs/model_card.md)) and the validation report
