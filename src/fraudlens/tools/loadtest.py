@@ -100,9 +100,13 @@ def run_locust(url: str, rate: int, duration_s: int, csv_prefix: Path, run_id: s
             "--loglevel",
             "WARNING",
         ],
-        check=True,
+        check=False,
         env=env,
     )
+    # Locust exits 1 when any request failed. Failed requests are a result to report,
+    # not a reason to lose the run; only a run that wrote no statistics is an error.
+    if not Path(f"{csv_prefix}_stats.csv").exists():
+        raise RuntimeError(f"locust wrote no statistics at {rate} rps")
 
 
 def main(argv: Sequence[str] | None = None) -> int:

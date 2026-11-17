@@ -181,3 +181,51 @@ def test_metrics_render_from_the_multiprocess_directory_when_set(
     # Nothing has been written to the directory by a worker, so nothing is reported:
     # the scrape reads the workers' files, not this process's registry.
     assert b"fraudlens_decisions_total" not in metrics.render()
+
+
+def test_failed_requests_are_reported_not_fatal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fraudlens.tools import loadtest
+
+    calls: list[list[str]] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> object:
+        calls.append(command)
+        prefix = command[command.index("--csv") + 1]
+        Path(f"{prefix}_stats.csv").write_text(LOCUST_CSV, encoding="utf-8")
+        return type("Done", (), {"returncode": 1})()  # Locust exits 1 when any request failed
+
+    monkeypatch.setattr(loadtest.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        loadtest,
+        "get_settings",
+        lambda: type(
+            "S", (), {"api_key": type("K", (), {"get_secret_value": lambda self: "k"})()}
+        )(),
+    )
+
+    loadtest.run_locust("http://svc", 500, 5, tmp_path / "rate500", "run")
+
+    assert len(calls) == 1
+    assert "--users" in calls[0]
+
+
+def test_a_locust_run_that_wrote_nothing_is_an_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fraudlens.tools import loadtest
+
+    monkeypatch.setattr(
+        loadtest.subprocess, "run", lambda command, **kwargs: type("Done", (), {"returncode": 2})()
+    )
+    monkeypatch.setattr(
+        loadtest,
+        "get_settings",
+        lambda: type(
+            "S", (), {"api_key": type("K", (), {"get_secret_value": lambda self: "k"})()}
+        )(),
+    )
+
+    with pytest.raises(RuntimeError, match="no statistics"):
+        loadtest.run_locust("http://svc", 50, 5, tmp_path / "rate50", "run")

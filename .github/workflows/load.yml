@@ -49,6 +49,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
+      - name: Name the report after the commit it measures
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "LABEL=$LABEL-${SHA:0:7}" >> "$GITHUB_ENV"
       - run: cp configs/.env.example .env
       - run: uv sync --locked --group load
       - name: Release a bundle with the released model's size (398 trees, depth 6)
