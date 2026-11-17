@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     idempotency_ttl_s: Annotated[int, Field(gt=0)] = 86_400
     """Seconds a decision stays in Redis for idempotent replays (Postgres keeps it forever)."""
 
+    drift_interval_s: Annotated[float, Field(gt=0)] = 60.0
+    """Seconds between drift reports computed by the service in the background."""
+
+    drift_window: Annotated[int, Field(ge=1)] = 10_000
+    """Newest decisions in the live drift window; the window before it is the baseline."""
+
     service_url: NonEmptyStr = "http://localhost:8000"
     """Base URL the replay client posts to."""
 

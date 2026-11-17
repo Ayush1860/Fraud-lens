@@ -4,6 +4,7 @@ import asyncio
 from typing import Any
 
 import httpx
+import numpy as np
 import pandas as pd
 import pytest
 import redis
@@ -289,3 +290,34 @@ async def test_card_history_top_reason_and_realised_precision(
     assert all(a["top_reason"] is None or isinstance(a["top_reason"], str) for a in alerts)
     assert any(a["top_reason"] for a in alerts)
     assert summary["dispositions"] == {"fraud": 2, "genuine": 1, "realised_precision": 2 / 3}
+
+
+async def test_injected_drift_raises_a_visible_alarm(
+    make_client: ClientFactory, txns: pd.DataFrame
+) -> None:
+    # Two categories so each has enough rows per window; amounts in one are tripled in
+    # the newest window, as `replay --inject-drift` does.
+    rows = txns.iloc[:1_200].reset_index(drop=True).copy()
+    rows["category"] = np.where(np.arange(len(rows)) % 2 == 0, "shopping_net", "grocery_pos")
+    late = (np.arange(len(rows)) >= 600) & (rows["category"] == "shopping_net").to_numpy()
+    rows.loc[late, "amount"] = (rows.loc[late, "amount"] * 3).round(2)
+
+    async with make_client(drift_window=600, drift_interval_s=0.5) as client:
+        for i in range(len(rows)):
+            body = to_payload(rows.iloc[i].to_dict())
+            assert (await score(client, body)).status_code == 200
+        # The background job recomputes every half second; wait for a report that covers
+        # both full windows.
+        drift: dict[str, Any] = {}
+        for _ in range(60):
+            drift = (await client.get("/v1/monitoring/summary")).json()["drift"] or {}
+            if drift.get("previous_window") == 600:
+                break
+            await asyncio.sleep(0.5)
+        assert drift.get("previous_window") == 600, drift
+
+    names = [alarm["name"] for alarm in drift["alarms"]]
+    assert "amount in shopping_net" in names
+    segments = {s["category"]: s for s in drift["segments"]}
+    assert segments["shopping_net"]["status"] == "alarm"
+    assert segments["grocery_pos"]["status"] in {"stable", "watch"}

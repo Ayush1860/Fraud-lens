@@ -479,3 +479,18 @@ class Repository:
             return counts
 
         return await self._guard(run())
+
+    async def recent_features(self, limit: int) -> list[tuple[dict[str, float | int | str], str]]:
+        """Feature vectors and decisions of the newest ``limit`` decisions, newest first."""
+        query = (
+            sa.select(decisions.c.features, decisions.c.decision)
+            .order_by(decisions.c.created_at.desc())
+            .limit(limit)
+        )
+
+        async def run() -> list[tuple[dict[str, float | int | str], str]]:
+            async with self.engine.connect() as conn:
+                rows = (await conn.execute(query)).all()
+            return [(features_from_json(features), decision) for features, decision in rows]
+
+        return await self._guard(run())

@@ -81,7 +81,9 @@ async def get_monitoring_summary(state: State) -> Any:
     """
     recent = await state.audit.recent_decisions(SUMMARY_WINDOW)
     labels = await state.audit.disposition_counts()
-    return summarise(recent, model_version=state.bundle.version, labels=labels)
+    summary = summarise(recent, model_version=state.bundle.version, labels=labels)
+    summary["drift"] = state.drift
+    return summary
 
 
 def summarise(

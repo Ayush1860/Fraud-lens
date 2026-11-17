@@ -305,6 +305,54 @@
         "title": "DecisionCounts",
         "type": "object"
       },
+      "DecisionMixDrift": {
+        "description": "The live decision mix against the validation slice's.",
+        "properties": {
+          "live": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Live",
+            "type": "object"
+          },
+          "psi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psi"
+          },
+          "status": {
+            "enum": [
+              "stable",
+              "watch",
+              "alarm",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "validation": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Validation",
+            "type": "object"
+          }
+        },
+        "required": [
+          "psi",
+          "status",
+          "live",
+          "validation"
+        ],
+        "title": "DecisionMixDrift",
+        "type": "object"
+      },
       "DecisionRecordOut": {
         "description": "A stored decision with the feature vector it was made from.",
         "properties": {
@@ -540,6 +588,93 @@
         "title": "DispositionSummary",
         "type": "object"
       },
+      "DriftAlarm": {
+        "description": "One comparison over the alarm level (PSI above 0.25).",
+        "properties": {
+          "kind": {
+            "enum": [
+              "feature",
+              "segment",
+              "decision_mix"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "psi": {
+            "title": "Psi",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "psi"
+        ],
+        "title": "DriftAlarm",
+        "type": "object"
+      },
+      "DriftReport": {
+        "description": "The latest drift report, recomputed in the background.",
+        "properties": {
+          "alarms": {
+            "items": {
+              "$ref": "#/components/schemas/DriftAlarm"
+            },
+            "title": "Alarms",
+            "type": "array"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "decision_mix": {
+            "$ref": "#/components/schemas/DecisionMixDrift"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureDrift"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "previous_window": {
+            "title": "Previous Window",
+            "type": "integer"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/SegmentDrift"
+            },
+            "title": "Segments",
+            "type": "array"
+          },
+          "window": {
+            "title": "Window",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "computed_at",
+          "model_version",
+          "window",
+          "previous_window",
+          "features",
+          "segments",
+          "decision_mix",
+          "alarms"
+        ],
+        "title": "DriftReport",
+        "type": "object"
+      },
       "ExplanationOut": {
         "description": "The full explanation of a stored decision, recomputed from its stored features.",
         "properties": {
@@ -644,6 +779,48 @@
           "contribution"
         ],
         "title": "FeatureContribution",
+        "type": "object"
+      },
+      "FeatureDrift": {
+        "description": "One feature against its training histogram.",
+        "properties": {
+          "cyclical": {
+            "title": "Cyclical",
+            "type": "boolean"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "psi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psi"
+          },
+          "status": {
+            "enum": [
+              "stable",
+              "watch",
+              "alarm",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "feature",
+          "psi",
+          "status",
+          "cyclical"
+        ],
+        "title": "FeatureDrift",
         "type": "object"
       },
       "GroupContribution": {
@@ -844,16 +1021,12 @@
           "drift": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "type": "number"
-                },
-                "type": "object"
+                "$ref": "#/components/schemas/DriftReport"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Drift"
+            ]
           },
           "latency_ms": {
             "$ref": "#/components/schemas/LatencySummary"
@@ -1146,6 +1319,53 @@
           "latency_ms"
         ],
         "title": "ScoreResponse",
+        "type": "object"
+      },
+      "SegmentDrift": {
+        "description": "Amount within one category, the live window against the window before it.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "n_live": {
+            "title": "N Live",
+            "type": "integer"
+          },
+          "n_previous": {
+            "title": "N Previous",
+            "type": "integer"
+          },
+          "psi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psi"
+          },
+          "status": {
+            "enum": [
+              "stable",
+              "watch",
+              "alarm",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "psi",
+          "status",
+          "n_live",
+          "n_previous"
+        ],
+        "title": "SegmentDrift",
         "type": "object"
       },
       "StoredReasonCode": {

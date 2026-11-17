@@ -1,6 +1,7 @@
 """What the routes share: settings, the bundle, the stores and the decision engine."""
 
 import hmac
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -11,7 +12,13 @@ from fastapi.security import APIKeyHeader
 
 from fraudlens.common.settings import Settings
 from fraudlens.explain.reason_codes import Templates
-from fraudlens.service.decision import AuditLog, DecisionEngine, FeatureStore
+from fraudlens.monitoring import drift_job
+from fraudlens.service.decision import (
+    AuditLog,
+    AuditUnavailable,
+    DecisionEngine,
+    FeatureStore,
+)
 from fraudlens.service.metrics import ServiceMetrics
 from fraudlens.service.repository import (
     AlertRow,
@@ -20,6 +27,8 @@ from fraudlens.service.repository import (
     RecentDecision,
 )
 from fraudlens.training.bundle import ModelBundle
+
+logger = logging.getLogger(__name__)
 
 
 class ServiceStore(FeatureStore, Protocol):
@@ -67,6 +76,9 @@ class ServiceAudit(AuditLog, Protocol):
     async def disposition_counts(self) -> dict[str, int]:
         """Alerts per label, counting each alert's latest label."""
 
+    async def recent_features(self, limit: int) -> list[tuple[dict[str, float | int | str], str]]:
+        """Feature vectors and decisions of the newest decisions, newest first."""
+
 
 @dataclass
 class ServiceState:
@@ -80,6 +92,24 @@ class ServiceState:
     engine: DecisionEngine
     metrics: ServiceMetrics
     templates: Templates
+    drift: dict[str, Any] | None = None
+    """The latest drift report, refreshed in the background; ``None`` until the first."""
+
+    async def refresh_drift(self) -> dict[str, Any] | None:
+        """Recompute the drift report now, keep it and publish it as metrics.
+
+        A failing audit store leaves the previous report in place.
+        """
+        try:
+            report = await drift_job.compute(
+                self.audit, self.bundle, window=self.settings.drift_window
+            )
+        except AuditUnavailable:
+            logger.warning("drift not refreshed: audit store unavailable")
+            return self.drift
+        self.drift = report
+        self.metrics.publish_drift(report)
+        return report
 
 
 def get_state(request: Request) -> ServiceState:

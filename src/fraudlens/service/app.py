@@ -7,6 +7,8 @@ its manifest. A bundle that fails verification raises, so the process never star
 serving and readiness never turns true.
 """
 
+import asyncio
+import contextlib
 import logging
 import re
 import time
@@ -77,6 +79,16 @@ async def connect_stores(settings: Settings) -> AsyncIterator[Stores]:
         await engine.dispose()
 
 
+async def _refresh_drift_forever(state: ServiceState, interval_s: float) -> None:
+    """Recompute the drift report now and then every ``interval_s`` seconds."""
+    while True:
+        try:
+            await state.refresh_drift()
+        except Exception:  # a broken report must never take the service down
+            logger.exception("drift refresh failed")
+        await asyncio.sleep(interval_s)
+
+
 def create_app(settings: Settings | None = None, *, connect: Connector = connect_stores) -> FastAPI:
     """Build the application.
 
@@ -122,7 +134,15 @@ def create_app(settings: Settings | None = None, *, connect: Connector = connect
                 templates=templates,
             )
             logger.info("model loaded", extra={"model_version": bundle.version})
-            yield
+            refresher = asyncio.create_task(
+                _refresh_drift_forever(app.state.service, config.drift_interval_s)
+            )
+            try:
+                yield
+            finally:
+                refresher.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await refresher
 
     app = FastAPI(
         title="FraudLens scoring service",

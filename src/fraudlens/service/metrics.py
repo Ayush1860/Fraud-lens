@@ -4,6 +4,9 @@ Each app gets its own registry, so several apps in one process (as in tests) nev
 collide. All durations are in seconds.
 """
 
+from collections.abc import Mapping
+from typing import Any
+
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
 
 LATENCY_BUCKETS = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.025, 0.05, 0.1, 0.15, 0.25, 0.5, 1.0)
@@ -52,12 +55,38 @@ class ServiceMetrics:
             buckets=SCORE_BUCKETS,
             registry=self.registry,
         )
+        self.drift_psi = Gauge(
+            "fraudlens_drift_psi",
+            "Population stability index from the latest drift report.",
+            ["kind", "name"],
+            registry=self.registry,
+        )
+        self.drift_alarms = Gauge(
+            "fraudlens_drift_alarms",
+            "Number of alarms in the latest drift report.",
+            registry=self.registry,
+        )
         self.model = Gauge(
             "fraudlens_model_info",
             "Always 1; the label names the active model version.",
             ["version"],
             registry=self.registry,
         )
+
+    def publish_drift(self, report: Mapping[str, Any]) -> None:
+        """Expose a drift report: PSI per feature and segment, and the alarm count."""
+        self.drift_psi.clear()
+        for row in report["features"]:
+            if row["psi"] is not None:
+                self.drift_psi.labels(kind="feature", name=row["feature"]).set(row["psi"])
+        for row in report["segments"]:
+            if row["psi"] is not None:
+                self.drift_psi.labels(kind="segment", name=row["category"]).set(row["psi"])
+        if report["decision_mix"]["psi"] is not None:
+            self.drift_psi.labels(kind="decision_mix", name="decision mix").set(
+                report["decision_mix"]["psi"]
+            )
+        self.drift_alarms.set(len(report["alarms"]))
 
     def stage(self, name: str, seconds: float) -> None:
         """Record one stage of one request."""
