@@ -20,12 +20,19 @@ until it is generated from an artefact by `make report`.
 | --- | --- | --- |
 | 0 | Scaffold: tooling, settings, logging, Compose stores, CI | Done |
 | 1 | Data checks, PII handling, time splits, the single feature definition | Done |
-| 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | In progress |
-| 3 | Contributions and reason codes | Planned |
+| 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | Done |
+| 3 | Contributions and reason codes | Next |
 | 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Planned |
 | 5 | React analyst console | Planned |
 | 6 | Monitoring, load test, documents | Planned |
 | 7 | AWS demo from Terraform | Planned |
+
+## Results
+
+The model report, with the imbalance study, the one-time test evaluation, a fairness
+check and the ULB benchmark, is generated from training artefacts:
+[docs/results/report.md](docs/results/report.md). Every number in it comes from a JSON
+file beside it; none is typed by hand.
 
 ## Stack
 

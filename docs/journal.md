@@ -114,3 +114,32 @@ A dated log of bugs, surprises and decisions.
   directory instead. The download step now copies any missing file from the directory
   the client returns. The row-count and schema checks in ingestion still run on whatever
   arrives, so a different file from the cache would be caught there.
+
+## 2026-11-17 — Phase 2 results from Colab
+
+Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
+
+- **Check:** the bundle was trained from commit `089e8dc`, the branch tip at the time, and
+  its raw-data SHA-256 values match the laptop's files exactly. On the laptop the bundle's
+  manifest verifies, and the 1,000-row reproduction sample scores identically: zero
+  difference in margin and in calibrated score between a Colab GPU fit and a laptop CPU
+  load.
+- **Finding:** every XGBoost arm lands within about 0.01 average precision of the others,
+  with overlapping intervals, far above logistic regression. Weighting and resampling bought
+  no ranking gain, which matches the Elor and Averbuch-Elor finding that balancing does not
+  help strong classifiers. Tuning picked A3 (square-root weighting) by a hair.
+- **Finding:** the tuned A3 model was already close to calibrated, so isotonic calibration
+  changed the test Brier score only slightly. Full weighting (A2) and resampling (A5) had
+  the worst raw Brier scores of the XGBoost arms, as the plan expected.
+- **Finding:** test average precision is below validation, a fall to expect a few months
+  later in time. The intervals on the test set do not overlap the validation ones.
+- **Finding:** precision at a 1% daily budget is capped near the fraud rate divided by
+  the budget (about 0.39 here), so the reported precision is close to the best possible.
+- **Finding:** ordering the review queue by score times amount raises dollar recall at
+  both budgets while catching slightly fewer frauds by count. That is the trade the plan
+  predicted, now measured.
+- **Finding:** the false-positive rate is higher for women than for men, and falls with age
+  band. The model never sees gender, so the gap comes through correlated features such
+  as category and amount. It is a finding to discuss in the model card, not to hide.
+- **Finding:** the model leans on amount, 24-hour spend, category and night-time, the same
+  signals the EDA showed. No identifier-like feature exists to leak, and none ranks high.
