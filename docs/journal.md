@@ -196,3 +196,26 @@ Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
   here: it dropped connections around Lua script loads and rejected valid lock releases.
 - **Check:** 2,000 synthetic transactions replayed through the service produce stored
   features equal to the batch builder's, and 1,000 stored decisions re-score bit for bit.
+
+## 2026-11-18 — Phase 5 analyst console
+
+- **Decision:** TypeScript is pinned at 5.9.3, not the newest release (7.0). The plan's type
+  generator, `openapi-typescript`, declares TypeScript 5 as a peer, and `typescript-eslint`
+  supports nothing past 6.0. Every other console dependency is at its latest version.
+- **Decision:** the threshold lab prices pairs on the server with `pair_costs`, the function
+  that chose the released thresholds, instead of repeating the cost formula in TypeScript.
+  A test checks that the released pair costs exactly what training recorded.
+- **Finding:** the curve has 21 points, not 400: isotonic calibration produces 21 distinct
+  scores, so those are the only operating points that exist. The sliders step through them.
+- **Finding:** the bundle's score reference histogram is degenerate (about 99% of validation
+  scores are 0, so the decile edges collapse). The monitoring page compares the live
+  decision mix with the validation decision mix instead, and plots the live score histogram
+  on a log scale, where the tail near 1 is visible.
+- **Bug (found by building the queue):** a review forced by the degraded-mode amount limit
+  carried no reason codes when the model itself had nothing positive to say, so an analyst
+  saw a flag with no explanation. It now leads with a rule reason,
+  `R00_HISTORY_UNAVAILABLE`, which has no contribution or share because it is not part of
+  the model's output.
+- **Check:** with the released bundle served locally, a verdict recorded in the browser was
+  read back from Postgres, and the Playwright smoke test passed against the local stack in
+  Edge. CI runs the same test in Chromium against the Docker Compose stack.
