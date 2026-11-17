@@ -71,6 +71,22 @@ def test_changed_raw_file_is_an_error_not_a_silent_rehash(tmp_path: Path) -> Non
         download_all(tmp_path, specs=SPECS, fetch=fetch)
 
 
+def test_files_are_copied_from_wherever_the_client_put_them(tmp_path: Path) -> None:
+    # Colab's Kaggle cache ignores output_dir and returns its own directory instead.
+    cache = tmp_path / "colab-cache"
+    cache.mkdir()
+
+    def cached_fetch(handle: str, *, output_dir: str) -> str:
+        (cache / "a.csv").write_bytes(b"1,2\n")
+        (cache / "b.csv").write_bytes(b"3,4\n")
+        return str(cache)
+
+    hashes = download_all(tmp_path / "raw", specs=SPECS, fetch=cached_fetch)
+
+    assert (tmp_path / "raw" / "toy" / "a.csv").read_bytes() == b"1,2\n"
+    assert hashes["toy/b.csv"] == hashlib.sha256(b"3,4\n").hexdigest()
+
+
 def test_missing_expected_file_after_fetch_is_an_error(tmp_path: Path) -> None:
     fetch = FakeFetch({"a.csv": b"1,2\n"})
 

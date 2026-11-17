@@ -60,3 +60,87 @@ A dated log of bugs, surprises and decisions.
   genuine transactions. Distance features will be weak on this data. See
   `notebooks/01_eda.ipynb`.
 - **Finding:** no card reaches the 500-entry history cap in Sparkov.
+
+## 2026-11-17 — Phase 2 modelling pipeline
+
+- **Decision:** training runs on Google Colab, because the 7-arm, 5-seed study plus 40
+  Optuna trials over three folds is too slow on the laptop CPU. The notebook
+  `notebooks/colab_training.ipynb` holds no logic: it clones this branch and runs
+  `python -m fraudlens.training <step>`, the same tested code the laptop would run. Every
+  step saves to Google Drive, and tuning stores its trials in SQLite so a disconnect
+  loses at most one trial.
+- **Decision:** the calibrator is stored as isotonic breakpoints and applied with
+  `numpy.interp`, which reproduces `IsotonicRegression.predict` exactly. No pickle is
+  loaded at serving time.
+- **Decision:** the release's calibrator maps the booster's own probability (the logistic
+  of its margin) to a calibrated one. For the undersampling arm this absorbs the prior
+  correction, because both maps are monotone, so serving never needs to know which arm
+  produced the model.
+- **Decision:** ranking metrics on the test set use the uncalibrated score. Isotonic
+  calibration is a step function, so it would turn distinct scores into ties and make
+  the top 1% of a day partly arbitrary.
+- **Decision:** threshold search tries every pair of candidate thresholds, using totals
+  above each candidate so each pair costs O(1). A test checks it against a brute-force
+  search, and the same totals are exported as the threshold lab's curve.
+- **Decision:** SMOTE seeds only from frauds with no missing feature, because
+  interpolation is undefined for a missing value, and uses SMOTE-NC so the categorical
+  column never gets an invented category. The rows with missing values stay in training.
+- **Decision:** bootstrap intervals for the alert metrics and the Brier score are
+  computed from per-day totals. Alerts are chosen per day, so a resampled day keeps the
+  alerts it had, and the result is exact without re-ranking each resample.
+- **Decision:** dropped MLflow. Optuna's own storage records every trial, and
+  `tuning.json` is the committed record.
+- **Decision:** the ULB benchmark has no 7-day gap, because the dataset covers two days.
+  Hours replace days as the bootstrap and alert-budget block.
+- **Smoke run:** before handing off to Colab, the experiment and release steps ran on the
+  real data with one seed and 20 trees, without reading the test set. All seven arms
+  trained in under a minute, and the bundle verified and reloaded. With only 20 trees,
+  plain XGBoost already reached an average precision near 0.95 on validation. That is
+  the risk the plan names, "scores look near-perfect on Sparkov", arriving on time.
+- **Bug:** the first Colab run failed while collecting tests, at `import matplotlib`.
+  Colab exports `MPLBACKEND=module://matplotlib_inline.backend_inline` to every shell
+  command, and matplotlib accepts that name only when `matplotlib-inline` is installed,
+  which the project environment does not install. It passed locally only because the EDA
+  notebook work had left `matplotlib-inline` in the local `.venv`. The report module now
+  imports pyplot only when it draws, forcing the file-only Agg backend.
+  `tests/unit/test_report_backend.py` runs the command line under Colab's exact setting.
+- **Bug:** a Colab run reached the experiment step without `data/processed/trainval.parquet`.
+  The data step had not finished, but `!` shell commands in a notebook do not stop it
+  when they fail, so later cells ran on missing files. Every notebook step now goes
+  through a `run()` helper that raises on a non-zero exit, and the data step verifies
+  its output files and skips work already done, so it is safe to re-run after a reset.
+- **Bug:** on Colab the download step reported that `fraudTrain.csv` was missing. Colab's
+  Kaggle cache ignores the `output_dir` passed to `kagglehub` and returns its own
+  directory instead. The download step now copies any missing file from the directory
+  the client returns. The row-count and schema checks in ingestion still run on whatever
+  arrives, so a different file from the cache would be caught there.
+
+## 2026-11-17 — Phase 2 results from Colab
+
+Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
+
+- **Check:** the bundle was trained from commit `089e8dc`, the branch tip at the time, and
+  its raw-data SHA-256 values match the laptop's files exactly. On the laptop the bundle's
+  manifest verifies, and the 1,000-row reproduction sample scores identically: zero
+  difference in margin and in calibrated score between a Colab GPU fit and a laptop CPU
+  load.
+- **Finding:** every XGBoost arm lands within about 0.01 average precision of the others,
+  with overlapping intervals, far above logistic regression. Weighting and resampling bought
+  no ranking gain, which matches the Elor and Averbuch-Elor finding that balancing does not
+  help strong classifiers. Tuning picked A3 (square-root weighting) by a hair.
+- **Finding:** the tuned A3 model was already close to calibrated, so isotonic calibration
+  changed the test Brier score only slightly. Full weighting (A2) and resampling (A5) had
+  the worst raw Brier scores of the XGBoost arms, as the plan expected.
+- **Finding:** test average precision is below validation, a fall to expect a few months
+  later in time. The intervals on the test set do not overlap the validation ones.
+- **Finding:** precision at a 1% daily budget is capped near the fraud rate divided by
+  the budget (about 0.39 here), so the reported precision is close to the best possible.
+- **Finding:** ordering the review queue by score times amount raises dollar recall at
+  both budgets while catching slightly fewer frauds by count. That is the trade the plan
+  predicted, now measured.
+- **Finding:** the false-positive rate is higher for women than for men, peaks for ages 25-39
+  and is lowest for 70 and over. The model never sees gender, so the gap comes through
+  correlated features such
+  as category and amount. It is a finding to discuss in the model card, not to hide.
+- **Finding:** the model leans on amount, 24-hour spend, category and night-time, the same
+  signals the EDA showed. No identifier-like feature exists to leak, and none ranks high.

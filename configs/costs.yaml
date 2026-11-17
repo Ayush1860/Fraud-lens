@@ -1,0 +1,19 @@
+# Business costs used to choose the review and block thresholds.
+# These are ASSUMPTIONS, not measurements. Change them and re-run training to re-choose
+# the thresholds; the threshold lab in the console shows what each choice would cost.
+
+# A missed fraud costs its full transaction amount. That one is not configurable.
+
+review_cost: 4.0
+# Dollars per alert an analyst reviews: about 6 minutes at a fully loaded $40 an hour.
+
+margin_rate: 0.02
+# Share of a wrongly blocked genuine purchase's amount that is lost: roughly the
+# interchange and margin the issuer would have earned.
+
+friction_cost: 15.0
+# Fixed dollars per wrongly blocked genuine purchase: a support contact, and the risk the
+# customer moves the card to the back of the wallet.
+
+review_capacity_share: 0.01
+# Analysts can review at most this share of daily transaction volume (1%).
