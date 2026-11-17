@@ -4,17 +4,30 @@ Every number in the report is read from a JSON artefact; nothing is typed by han
 """
 
 import json
+import os
 from collections.abc import Mapping
 from pathlib import Path
+from types import ModuleType
 from typing import Any
-
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 BLUE, ORANGE = "#2a78d6", "#eb6834"
 ARM_COLOURS = ("#52514e", "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#6250d6")
+
+
+def _pyplot() -> ModuleType:
+    """Import pyplot drawing to files only, whatever backend the environment requests.
+
+    Jupyter and Colab export ``MPLBACKEND=module://matplotlib_inline.backend_inline`` to
+    every shell command. The project environment does not install that backend, and
+    matplotlib rejects the setting at import time, so it is replaced before importing.
+    """
+    os.environ["MPLBACKEND"] = "Agg"
+    import matplotlib
+
+    matplotlib.use("Agg", force=True)
+    import matplotlib.pyplot as plt
+
+    return plt
 
 
 def _load(path: Path) -> Any:
@@ -50,6 +63,7 @@ def _arm_table(study: Mapping[str, Any]) -> list[str]:
 
 
 def _pr_figure(study: Mapping[str, Any], path: Path, title: str) -> None:
+    plt = _pyplot()
     fig, ax = plt.subplots(figsize=(7, 4.5))
     for colour, arm in zip(ARM_COLOURS, study["arms"], strict=False):
         curve = arm["pr_curve"]
@@ -67,6 +81,7 @@ def _pr_figure(study: Mapping[str, Any], path: Path, title: str) -> None:
 
 
 def _reliability_figure(test: Mapping[str, Any], path: Path) -> None:
+    plt = _pyplot()
     fig, ax = plt.subplots(figsize=(5.5, 5))
     ax.plot([1e-5, 1], [1e-5, 1], color="#c9c8c2", linewidth=1, label="Perfect calibration")
     for key, colour, name in (

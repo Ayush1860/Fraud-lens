@@ -97,3 +97,10 @@ A dated log of bugs, surprises and decisions.
   trained in under a minute, and the bundle verified and reloaded. With only 20 trees,
   plain XGBoost already reached an average precision near 0.95 on validation. That is
   the risk the plan names, "scores look near-perfect on Sparkov", arriving on time.
+- **Bug:** the first Colab run failed while collecting tests, at `import matplotlib`.
+  Colab exports `MPLBACKEND=module://matplotlib_inline.backend_inline` to every shell
+  command, and matplotlib accepts that name only when `matplotlib-inline` is installed,
+  which the project environment does not install. It passed locally only because the EDA
+  notebook work had left `matplotlib-inline` in the local `.venv`. The report module now
+  imports pyplot only when it draws, forcing the file-only Agg backend.
+  `tests/unit/test_report_backend.py` runs the command line under Colab's exact setting.
