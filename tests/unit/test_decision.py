@@ -289,3 +289,33 @@ async def test_flagged_transactions_carry_worded_reasons(
     stored = audit.decisions[flagged.body["transaction_id"]]
     assert [r.id for r in stored.reason_codes] == [r["id"] for r in reasons]
     assert "explanation" in observer.stages
+
+
+async def test_a_review_forced_by_the_degraded_limit_says_so(
+    engine: DecisionEngine, store: MemoryStore, bundle: ModelBundle
+) -> None:
+    store.down = True
+    outcome = None
+    for i, amount in enumerate((600.0, 700.0, 800.0, 950.0)):
+        candidate = await engine.score(txn(40 + i, amount=amount))
+        model_score = candidate.body["risk_score"]
+        if model_score < bundle.thresholds.t_review:  # the model alone would approve
+            outcome = candidate
+            break
+    assert outcome is not None, "the toy model flagged every probe on its own"
+
+    assert outcome.body["decision"] == "review"
+    first = outcome.body["reason_codes"][0]
+    assert first["id"] == "R00_HISTORY_UNAVAILABLE"
+    assert first["share"] == 0.0
+    assert "$500" in first["text"]
+
+
+async def test_a_degraded_model_flag_carries_no_rule_reason(
+    engine: DecisionEngine, store: MemoryStore
+) -> None:
+    store.down = True
+
+    small = await engine.score(txn(50, amount=20.0))
+
+    assert all(r["id"] != "R00_HISTORY_UNAVAILABLE" for r in small.body["reason_codes"])

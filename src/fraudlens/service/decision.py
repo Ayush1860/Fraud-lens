@@ -37,7 +37,13 @@ import numpy as np
 
 from fraudlens.common.logging import mask_card_id
 from fraudlens.common.types import HistoryEntry, Transaction
-from fraudlens.explain.reason_codes import ReasonCode, Templates, explain, load_templates
+from fraudlens.explain.reason_codes import (
+    MAX_REASONS,
+    ReasonCode,
+    Templates,
+    explain,
+    load_templates,
+)
 from fraudlens.features.definitions import (
     FEATURE_NAMES,
     FeatureVector,
@@ -55,6 +61,9 @@ REVIEW = 1
 
 PENDING = "pending"
 """Value of an idempotency key whose first request is still being processed."""
+
+HISTORY_UNAVAILABLE = "R00_HISTORY_UNAVAILABLE"
+"""Id of the rule reason given when the degraded limit, not the model, forced a review."""
 
 DUPLICATE_WAIT_S = 1.0
 """How long a retry waits for the first request to finish before answering 409."""
@@ -277,8 +286,9 @@ class DecisionEngine:
             margin = self.bundle.margin(X)
             score = float(self.bundle.calibrator(logistic(margin))[0])
             action = int(self.bundle.decide(np.array([score]))[0])
-        if degraded and txn.amount > self.degraded_review_amount:
-            action = max(action, REVIEW)
+        forced = degraded and txn.amount > self.degraded_review_amount and action < REVIEW
+        if forced:
+            action = REVIEW
 
         reasons: tuple[ReasonCode, ...] = ()
         if action >= REVIEW:
@@ -287,6 +297,8 @@ class DecisionEngine:
                     self.bundle.booster, X, [features], FEATURE_NAMES, FEATURE_TYPES, self.templates
                 )[0]
                 reasons = explanation.reasons
+            if forced:
+                reasons = (self._limit_reason(txn.amount), *reasons)[:MAX_REASONS]
 
         record = AuditRecord(
             transaction_id=txn.transaction_id,
@@ -320,6 +332,19 @@ class DecisionEngine:
                     "history not updated", extra={"card": mask_card_id(txn.card_id)}, exc_info=True
                 )
         return Outcome(record.response(), replayed=False)
+
+    def _limit_reason(self, amount: float) -> ReasonCode:
+        """The rule reason for a review the degraded limit forced, not the model.
+
+        It has no contribution and no share: it is a rule, not part of the model's margin.
+        """
+        return ReasonCode(
+            HISTORY_UNAVAILABLE,
+            f"Card history unavailable, and the amount of ${amount:,.2f} is over the "
+            f"${self.degraded_review_amount:,.0f} review limit",
+            0.0,
+            0.0,
+        )
 
     async def _duplicate(self, transaction_id: str, value: str | None) -> Outcome:
         """Answer a retry: wait briefly for an in-flight first request, then replay it."""

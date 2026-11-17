@@ -1,16 +1,19 @@
 """Scoring, stored decisions and explanations."""
 
 import logging
+from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 
 from fraudlens.common.logging import mask_card_id
-from fraudlens.explain.reason_codes import ReasonCode, explain
+from fraudlens.explain.reason_codes import MAX_REASONS, ReasonCode, explain
 from fraudlens.features.definitions import FEATURE_NAMES
 from fraudlens.features.encoding import FEATURE_TYPES, encode_vector
+from fraudlens.service.decision import HISTORY_UNAVAILABLE
 from fraudlens.service.schemas import (
+    CardTransactionOut,
     DecisionRecordOut,
     ExplanationOut,
     ScoreRequest,
@@ -87,6 +90,22 @@ async def get_transaction(transaction_id: TransactionId, state: State) -> Any:
     }
 
 
+@router.get("/{transaction_id}/card-history", response_model=list[CardTransactionOut])
+async def get_card_history(
+    transaction_id: TransactionId,
+    state: State,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> Any:
+    """The card's decisions up to and including this one, newest first."""
+    record = await state.audit.get_decision(transaction_id)
+    if record is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no decision for this transaction")
+    rows = await state.audit.card_history(
+        record.card_id, until=datetime.fromtimestamp(record.event_ts, tz=UTC), limit=limit
+    )
+    return [asdict(row) for row in rows]
+
+
 @router.get("/{transaction_id}/explanation", response_model=ExplanationOut)
 async def get_explanation(transaction_id: TransactionId, state: State) -> Any:
     """Every feature's contribution and the reason codes, recomputed from stored features.
@@ -127,7 +146,10 @@ async def get_explanation(transaction_id: TransactionId, state: State) -> Any:
             {"id": gid, "title": state.templates.titles[gid], "contribution": value}
             for gid, value in explanation.groups.items()
         ],
-        "reason_codes": [_reason(r) for r in explanation.reasons],
+        "reason_codes": [
+            *(_reason(r) for r in record.reason_codes if r.id == HISTORY_UNAVAILABLE),
+            *(_reason(r) for r in explanation.reasons),
+        ][:MAX_REASONS],
         "mitigating": None if explanation.mitigating is None else _reason(explanation.mitigating),
     }
     await state.store.cache_set(cache_key, body, EXPLANATION_CACHE_S)
