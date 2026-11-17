@@ -5,6 +5,7 @@ letting the service run with a guessable value.
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import Field, SecretStr
@@ -44,6 +45,30 @@ class Settings(BaseSettings):
 
     redis_url: NonEmptyStr
     """URL of the Redis online feature store."""
+
+    bundle_dir: Path | None = None
+    """Model bundle the service loads. When unset, the newest release under ``models_dir``."""
+
+    models_dir: Path = Path("models")
+    """Directory holding released bundles, ``models/<YYYY-MM-DD.N>/``."""
+
+    degraded_review_amount: Annotated[float, Field(gt=0)] = 500.0
+    """Dollars. Without card history, any larger amount goes to review at least."""
+
+    redis_timeout_ms: Annotated[int, Field(gt=0)] = 50
+    """Milliseconds allowed for each Redis call before the request takes the degraded path."""
+
+    card_lock_timeout_ms: Annotated[int, Field(gt=0)] = 150
+    """Milliseconds a request waits for its card's lock before taking the degraded path."""
+
+    database_timeout_ms: Annotated[int, Field(gt=0)] = 2_000
+    """Milliseconds allowed for an audit write before the request fails with 503."""
+
+    idempotency_ttl_s: Annotated[int, Field(gt=0)] = 86_400
+    """Seconds a decision stays in Redis for idempotent replays (Postgres keeps it forever)."""
+
+    service_url: NonEmptyStr = "http://localhost:8000"
+    """Base URL the replay client posts to."""
 
 
 @lru_cache(maxsize=1)
