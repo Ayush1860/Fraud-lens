@@ -201,3 +201,25 @@ export const experiments: ExperimentsFile = {
     },
   ],
 };
+
+export const driftReport: NonNullable<MonitoringSummary["drift"]> = {
+  computed_at: "2026-11-18T10:00:00Z",
+  model_version: "2026-11-17.1",
+  window: 10_000,
+  previous_window: 10_000,
+  features: [
+    { feature: "amount", psi: 0.012, status: "stable", cyclical: false },
+    { feature: "day_of_week", psi: 2.09, status: "alarm", cyclical: true },
+  ],
+  segments: [
+    { category: "shopping_net", psi: 0.342, status: "alarm", n_live: 732, n_previous: 741 },
+    { category: "travel", psi: null, status: "unknown", n_live: 40, n_previous: 35 },
+  ],
+  decision_mix: {
+    psi: 0.004,
+    status: "stable",
+    live: { approve: 0.99, review: 0.004, block: 0.006 },
+    validation: { approve: 0.99, review: 0.0035, block: 0.0059 },
+  },
+  alarms: [{ kind: "segment", name: "amount in shopping_net", psi: 0.342 }],
+};

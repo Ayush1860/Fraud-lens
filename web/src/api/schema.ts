@@ -374,6 +374,27 @@ export interface components {
             total: number;
         };
         /**
+         * DecisionMixDrift
+         * @description The live decision mix against the validation slice's.
+         */
+        DecisionMixDrift: {
+            /** Live */
+            live: {
+                [key: string]: number;
+            };
+            /** Psi */
+            psi: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "stable" | "watch" | "alarm" | "unknown";
+            /** Validation */
+            validation: {
+                [key: string]: number;
+            };
+        };
+        /**
          * DecisionRecordOut
          * @description A stored decision with the feature vector it was made from.
          */
@@ -474,6 +495,45 @@ export interface components {
             realised_precision: number | null;
         };
         /**
+         * DriftAlarm
+         * @description One comparison over the alarm level (PSI above 0.25).
+         */
+        DriftAlarm: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "feature" | "segment" | "decision_mix";
+            /** Name */
+            name: string;
+            /** Psi */
+            psi: number;
+        };
+        /**
+         * DriftReport
+         * @description The latest drift report, recomputed in the background.
+         */
+        DriftReport: {
+            /** Alarms */
+            alarms: components["schemas"]["DriftAlarm"][];
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            decision_mix: components["schemas"]["DecisionMixDrift"];
+            /** Features */
+            features: components["schemas"]["FeatureDrift"][];
+            /** Model Version */
+            model_version: string;
+            /** Previous Window */
+            previous_window: number;
+            /** Segments */
+            segments: components["schemas"]["SegmentDrift"][];
+            /** Window */
+            window: number;
+        };
+        /**
          * ExplanationOut
          * @description The full explanation of a stored decision, recomputed from its stored features.
          */
@@ -507,6 +567,23 @@ export interface components {
             feature: string;
             /** Value */
             value: number | string | null;
+        };
+        /**
+         * FeatureDrift
+         * @description One feature against its training histogram.
+         */
+        FeatureDrift: {
+            /** Cyclical */
+            cyclical: boolean;
+            /** Feature */
+            feature: string;
+            /** Psi */
+            psi: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "stable" | "watch" | "alarm" | "unknown";
         };
         /**
          * GroupContribution
@@ -588,10 +665,7 @@ export interface components {
             alert_rate: number | null;
             decisions: components["schemas"]["DecisionCounts"];
             dispositions: components["schemas"]["DispositionSummary"];
-            /** Drift */
-            drift: {
-                [key: string]: number;
-            } | null;
+            drift: components["schemas"]["DriftReport"] | null;
             latency_ms: components["schemas"]["LatencySummary"];
             /** Model Version */
             model_version: string;
@@ -700,6 +774,25 @@ export interface components {
             risk_score: number;
             /** Transaction Id */
             transaction_id: string;
+        };
+        /**
+         * SegmentDrift
+         * @description Amount within one category, the live window against the window before it.
+         */
+        SegmentDrift: {
+            /** Category */
+            category: string;
+            /** N Live */
+            n_live: number;
+            /** N Previous */
+            n_previous: number;
+            /** Psi */
+            psi: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "stable" | "watch" | "alarm" | "unknown";
         };
         /**
          * StoredReasonCode

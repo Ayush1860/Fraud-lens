@@ -6,6 +6,7 @@ import { mockApi, renderAt } from "../test/api";
 import {
   alert,
   decision,
+  driftReport,
   experiments,
   explanation,
   history,
@@ -190,9 +191,26 @@ describe("model and monitoring", () => {
     expect(within(block).getByText("0.60%")).toBeInTheDocument();
     expect(screen.getByText("75.0% (3 fraud, 1 genuine)")).toBeInTheDocument();
     expect(screen.getByText("8 ms / 14 ms / 21 ms")).toBeInTheDocument();
-    expect(screen.getByText(/arrives with the drift job/)).toBeInTheDocument();
+    expect(screen.getByText(/first drift report is computed/)).toBeInTheDocument();
     expect(screen.getByText("0.9900")).toBeInTheDocument();
     expect(screen.getByText("0.9998")).toBeInTheDocument();
+  });
+
+  it("shows a drift alarm, and never alarms on calendar features", async () => {
+    mockApi({
+      "GET /v1/model": { body: model },
+      "GET /v1/monitoring/summary": { body: { ...monitoring, drift: driftReport } },
+    });
+    renderAt("/model");
+
+    const alarm = await screen.findByText("Drift alarm.");
+    expect(alarm.closest("div")).toHaveTextContent("amount in shopping_net (PSI 0.34)");
+    const segments = screen.getByRole("table", { name: "Amount by category" });
+    const travel = within(segments).getByText("travel").closest("tr") as HTMLElement;
+    expect(within(travel).getByText("Too few rows")).toBeInTheDocument();
+    const features = screen.getByRole("table", { name: "Features against training" });
+    const calendar = within(features).getByText("day_of_week").closest("tr") as HTMLElement;
+    expect(within(calendar).getByText(/shorter than a week/)).toBeInTheDocument();
   });
 
   it("has an empty state before any traffic", async () => {
