@@ -104,3 +104,8 @@ A dated log of bugs, surprises and decisions.
   notebook work had left `matplotlib-inline` in the local `.venv`. The report module now
   imports pyplot only when it draws, forcing the file-only Agg backend.
   `tests/unit/test_report_backend.py` runs the command line under Colab's exact setting.
+- **Bug:** a Colab run reached the experiment step without `data/processed/trainval.parquet`.
+  The data step had not finished, but `!` shell commands in a notebook do not stop it
+  when they fail, so later cells ran on missing files. Every notebook step now goes
+  through a `run()` helper that raises on a non-zero exit, and the data step verifies
+  its output files and skips work already done, so it is safe to re-run after a reset.
