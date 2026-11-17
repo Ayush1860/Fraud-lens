@@ -109,3 +109,8 @@ A dated log of bugs, surprises and decisions.
   when they fail, so later cells ran on missing files. Every notebook step now goes
   through a `run()` helper that raises on a non-zero exit, and the data step verifies
   its output files and skips work already done, so it is safe to re-run after a reset.
+- **Bug:** on Colab the download step reported that `fraudTrain.csv` was missing. Colab's
+  Kaggle cache ignores the `output_dir` passed to `kagglehub` and returns its own
+  directory instead. The download step now copies any missing file from the directory
+  the client returns. The row-count and schema checks in ingestion still run on whatever
+  arrives, so a different file from the cache would be caught there.

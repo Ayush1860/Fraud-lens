@@ -9,6 +9,7 @@ raw bytes it was built from.
 import hashlib
 import json
 import logging
+import shutil
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -103,7 +104,12 @@ def download_all(
         if not all((target / file).exists() for file in spec.files):
             target.mkdir(parents=True, exist_ok=True)
             logger.info("downloading dataset", extra={"dataset": name, "handle": spec.handle})
-            fetch(spec.handle, output_dir=str(target))
+            returned = Path(fetch(spec.handle, output_dir=str(target)))
+            # Some environments (Colab's Kaggle cache) ignore output_dir and return their
+            # own directory instead; copy what is missing from there.
+            for file in spec.files:
+                if not (target / file).exists() and (returned / file).exists():
+                    shutil.copyfile(returned / file, target / file)
         for file in spec.files:
             path = target / file
             if not path.exists():
