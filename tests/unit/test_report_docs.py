@@ -16,6 +16,7 @@ from fraudlens.tools.report import (
     START,
     Artefacts,
     model_card,
+    perf_index,
     readme_block,
     update_readme,
     validation_report,
@@ -47,6 +48,15 @@ def test_generated_documents_match_the_artefacts(
     committed = (ROOT / "docs" / document).read_text(encoding="utf-8")
 
     assert render(artefacts) == committed, f"docs/{document} is stale: run `make report`"  # type: ignore[operator]
+
+
+def test_the_performance_index_matches_the_reports(artefacts: Artefacts) -> None:
+    committed = (ROOT / "docs/perf/README.md").read_text(encoding="utf-8")
+
+    assert perf_index(artefacts.perf, ROOT / "docs/perf") == committed, (
+        "docs/perf/README.md is stale: run `make report`"
+    )
+    assert "| Service CPU (median) |" in committed
 
 
 def test_the_block_replaces_only_what_is_between_the_markers() -> None:

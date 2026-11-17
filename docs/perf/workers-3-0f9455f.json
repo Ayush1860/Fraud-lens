@@ -1,0 +1,237 @@
+{
+  "label": "workers-3-0f9455f",
+  "commit": "d65f037",
+  "started_at": "2026-11-17T22:50:04+00:00",
+  "machine": {
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "cpus": 4,
+    "memory_gb": 15.6,
+    "os": "Linux 7.0.0-1019-azure"
+  },
+  "service": "uvicorn, 3 worker(s), in Docker",
+  "stack": "GitHub Actions ubuntu-latest runner; the service, Postgres and Redis in Docker Compose on the same machine, with Locust",
+  "runs": [
+    {
+      "target_rps": 50,
+      "duration_s": 60,
+      "requests": 2960,
+      "failures": 0,
+      "achieved_rps": 50.1,
+      "avg_ms": 65.65536282770267,
+      "p50_ms": 63.0,
+      "p95_ms": 98.0,
+      "p99_ms": 110.0,
+      "max_ms": 150.53670000000352,
+      "server_score_ms": {
+        "p50": 69.34,
+        "p95": 98.78,
+        "p99": 134.04,
+        "over_last_edge": 0.0
+      },
+      "stages": {
+        "database": {
+          "count": 3000,
+          "mean_ms": 27.01,
+          "p50_ms": 24.26,
+          "p95_ms": 61.41
+        },
+        "explanation": {
+          "count": 336,
+          "mean_ms": 17.24,
+          "p50_ms": 18.81,
+          "p95_ms": 34.13
+        },
+        "features": {
+          "count": 3000,
+          "mean_ms": 0.04,
+          "p50_ms": 0.05,
+          "p95_ms": 0.1
+        },
+        "model": {
+          "count": 3000,
+          "mean_ms": 5.64,
+          "p50_ms": 5.81,
+          "p95_ms": 14.45
+        },
+        "redis_claim": {
+          "count": 3000,
+          "mean_ms": 1.99,
+          "p50_ms": 0.84,
+          "p95_ms": 7.2
+        },
+        "redis_lock": {
+          "count": 2988,
+          "mean_ms": 4.33,
+          "p50_ms": 0.86,
+          "p95_ms": 26.17
+        },
+        "redis_read": {
+          "count": 2983,
+          "mean_ms": 13.57,
+          "p50_ms": 8.7,
+          "p95_ms": 52.12
+        },
+        "redis_write": {
+          "count": 2971,
+          "mean_ms": 1.47,
+          "p50_ms": 1.1,
+          "p95_ms": 3.91
+        }
+      },
+      "decisions": {
+        "approve": 2664.0,
+        "review": 335.0,
+        "block": 1.0
+      },
+      "degraded": 29
+    },
+    {
+      "target_rps": 200,
+      "duration_s": 60,
+      "requests": 7884,
+      "failures": 0,
+      "achieved_rps": 133.5,
+      "avg_ms": 236.78407722234977,
+      "p50_ms": 210.0,
+      "p95_ms": 550.0,
+      "p99_ms": 680.0,
+      "max_ms": 1076.167761000022,
+      "server_score_ms": {
+        "p50": 158.39,
+        "p95": 491.9,
+        "p99": 876.3,
+        "over_last_edge": 0.0
+      },
+      "stages": {
+        "database": {
+          "count": 8000,
+          "mean_ms": 72.94,
+          "p50_ms": 52.81,
+          "p95_ms": 233.89
+        },
+        "explanation": {
+          "count": 648,
+          "mean_ms": 20.08,
+          "p50_ms": 20.36,
+          "p95_ms": 55.96
+        },
+        "features": {
+          "count": 8010,
+          "mean_ms": 0.05,
+          "p50_ms": 0.05,
+          "p95_ms": 0.1
+        },
+        "model": {
+          "count": 8010,
+          "mean_ms": 5.49,
+          "p50_ms": 5.05,
+          "p95_ms": 14.95
+        },
+        "redis_claim": {
+          "count": 8010,
+          "mean_ms": 10.88,
+          "p50_ms": 4.49,
+          "p95_ms": 52.81
+        },
+        "redis_lock": {
+          "count": 7694,
+          "mean_ms": 9.6,
+          "p50_ms": 3.99,
+          "p95_ms": 40.76
+        },
+        "redis_read": {
+          "count": 7620,
+          "mean_ms": 13.65,
+          "p50_ms": 6.43,
+          "p95_ms": 57.56
+        },
+        "redis_write": {
+          "count": 7564,
+          "mean_ms": 10.85,
+          "p50_ms": 4.1,
+          "p95_ms": 53.14
+        }
+      },
+      "decisions": {
+        "approve": 7349.0,
+        "review": 642.0,
+        "block": 2.0
+      },
+      "degraded": 430
+    },
+    {
+      "target_rps": 500,
+      "duration_s": 60,
+      "requests": 8631,
+      "failures": 0,
+      "achieved_rps": 146.1,
+      "avg_ms": 680.3738005009877,
+      "p50_ms": 670.0,
+      "p95_ms": 1000.0,
+      "p99_ms": 1200.0,
+      "max_ms": 1829.6433529999945,
+      "server_score_ms": {
+        "p50": 630.93,
+        "p95": 983.81,
+        "p99": 1989.01,
+        "over_last_edge": 0.0
+      },
+      "stages": {
+        "database": {
+          "count": 8790,
+          "mean_ms": 253.19,
+          "p50_ms": 236.13,
+          "p95_ms": 499.93
+        },
+        "explanation": {
+          "count": 68,
+          "mean_ms": 27.65,
+          "p50_ms": 26.97,
+          "p95_ms": 59.27
+        },
+        "features": {
+          "count": 8819,
+          "mean_ms": 0.06,
+          "p50_ms": 0.05,
+          "p95_ms": 0.1
+        },
+        "model": {
+          "count": 8820,
+          "mean_ms": 7.42,
+          "p50_ms": 6.85,
+          "p95_ms": 15.94
+        },
+        "redis_claim": {
+          "count": 8816,
+          "mean_ms": 88.55,
+          "p50_ms": 88.8,
+          "p95_ms": 233.38
+        },
+        "redis_lock": {
+          "count": 2436,
+          "mean_ms": 22.74,
+          "p50_ms": 14.43,
+          "p95_ms": 79.44
+        },
+        "redis_read": {
+          "count": 2404,
+          "mean_ms": 31.81,
+          "p50_ms": 22.93,
+          "p95_ms": 105.87
+        },
+        "redis_write": {
+          "count": 2358,
+          "mean_ms": 43.7,
+          "p50_ms": 26.81,
+          "p95_ms": 127.12
+        }
+      },
+      "decisions": {
+        "approve": 8717.0,
+        "review": 72.0,
+        "block": 0.0
+      },
+      "degraded": 6433
+    }
+  ]
+}
