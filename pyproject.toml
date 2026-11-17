@@ -7,13 +7,19 @@ authors = [
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "imbalanced-learn>=0.14.2",
     "kagglehub>=1.0.3",
+    "matplotlib>=3.11.2",
     "numpy>=2.5.5",
+    "optuna>=5.1.0",
     "pandas>=3.1.1",
     "pandera>=0.36.0",
     "pyarrow>=26.0.1",
     "pydantic>=2.14.3",
     "pydantic-settings>=2.16.3",
+    "pyyaml>=6.0.3",
+    "scikit-learn>=1.9.1",
+    "xgboost>=3.4.1",
 ]
 
 [build-system]
@@ -40,11 +46,16 @@ select = [
     "RUF",
 ]
 
+# X for a feature matrix is the scientific-Python convention; JSON documents are Any.
+ignore = ["N803", "N806", "ANN401"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "S101"]
+# Colab orchestration cells shell out and import where they are used.
+"notebooks/colab_training.ipynb" = ["S603", "S607", "E402"]
 
 [tool.mypy]
 strict = true
@@ -53,7 +64,7 @@ files = ["src"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["kagglehub"]
+module = ["kagglehub", "sklearn.*", "imblearn.*", "scipy.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -83,6 +94,7 @@ dev = [
     "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.5",
+    "types-pyyaml>=6.0.12.20261113",
 ]
 notebooks = [
     "ipykernel>=7.4.0",
