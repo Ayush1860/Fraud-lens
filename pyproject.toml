@@ -75,10 +75,16 @@ plugins = ["pydantic.mypy"]
 module = ["kagglehub", "sklearn.*", "imblearn.*", "scipy.*", "locust.*"]
 ignore_missing_imports = true
 
-# Locust is only installed with the `load` group; its user class is untyped there.
+# Locust is only installed with the `load` group, so CI's type check runs without it.
+# Skipping its types here too makes the local check see exactly what CI sees.
+[[tool.mypy.overrides]]
+module = ["locust", "locust.*"]
+follow_imports = "skip"
+
 [[tool.mypy.overrides]]
 module = ["fraudlens.tools.locustfile"]
 disallow_subclassing_any = false
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
