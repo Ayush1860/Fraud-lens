@@ -1,0 +1,79 @@
+name: Load test
+
+# Run by hand, or by adding the label `load-test` to a pull request. Measures the scoring
+# service in Docker Compose on a GitHub-hosted runner and uploads the report; commit it
+# under docs/perf/ to publish the numbers.
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      label:
+        description: Report name, for example baseline or after-workers
+        required: true
+        default: baseline
+      rates:
+        description: Target requests per second, space separated
+        required: true
+        default: "50 200 500"
+      duration:
+        description: Seconds measured at each rate
+        required: true
+        default: "60"
+      workers:
+        description: Uvicorn worker processes in the service
+        required: true
+        default: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  load:
+    name: Locust against the Compose stack
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'load-test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      LABEL: ${{ inputs.label || 'baseline' }}
+      RATES: ${{ inputs.rates || '50 200 500' }}
+      DURATION: ${{ inputs.duration || '60' }}
+      WORKERS: ${{ inputs.workers || '1' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+      - run: cp configs/.env.example .env
+      - run: uv sync --locked --group load
+      - name: Release a bundle with the released model's size (398 trees, depth 6)
+        run: uv run python tests/toy_bundle.py models --released-size
+      - name: Start the service, Postgres and Redis
+        env:
+          FRAUDLENS_WORKERS: ${{ env.WORKERS }}
+        run: docker compose up -d --build --wait --wait-timeout 300 postgres redis api
+      - name: Runner spec
+        run: |
+          lscpu | grep -E "Model name|^CPU\(s\)"
+          free -g | head -2
+          docker version --format "Docker {{.Server.Version}}"
+      - name: Load test
+        run: >
+          uv run python -m fraudlens.tools.loadtest
+          --url http://127.0.0.1:8000
+          --label "$LABEL"
+          --rates $RATES
+          --duration $DURATION
+          --service "uvicorn, $WORKERS worker(s), in Docker"
+          --stack "GitHub Actions ubuntu-latest runner; the service, Postgres and Redis in Docker Compose on the same machine, with Locust"
+          --out docs/perf
+      - uses: actions/upload-artifact@v7
+        with:
+          name: perf-${{ env.LABEL }}
+          path: docs/perf/${{ env.LABEL }}.*
+      - name: Service logs
+        if: failure()
+        run: docker compose logs --no-color --tail 200 api
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

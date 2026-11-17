@@ -33,4 +33,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=6 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=2)"]
 # Migrations are idempotent; running them first means a fresh database just works.
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn fraudlens.service.app:create_app --factory --host 0.0.0.0 --port 8000 --no-access-log"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn fraudlens.service.app:create_app --factory --host 0.0.0.0 --port 8000 --no-access-log --workers ${FRAUDLENS_WORKERS:-1}"]
