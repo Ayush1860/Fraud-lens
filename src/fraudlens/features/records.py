@@ -45,3 +45,16 @@ def to_history_entry(row: Mapping[str, Any]) -> HistoryEntry:
         merchant_lat=float(row["merchant_lat"]),
         merchant_long=float(row["merchant_long"]),
     )
+
+
+def history_entry(txn: Transaction) -> HistoryEntry:
+    """Build the ``HistoryEntry`` the feature store keeps once ``txn`` has been scored."""
+    return HistoryEntry(
+        transaction_id=txn.transaction_id,
+        event_ts=txn.event_ts,
+        amount_cents=amount_to_cents(txn.amount),
+        category=txn.category,
+        merchant_id=txn.merchant_id,
+        merchant_lat=txn.merchant_lat,
+        merchant_long=txn.merchant_long,
+    )

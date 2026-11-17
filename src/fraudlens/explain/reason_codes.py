@@ -105,7 +105,9 @@ def render(group_id: str, features: FeatureValues, templates: Templates) -> str 
 
     Args:
         group_id: The group, for example ``R02_VELOCITY``.
-        features: The transaction's feature values, as ``compute_features`` returns them.
+        features: The transaction's feature values, as ``compute_features`` or
+            ``transaction_only_features`` returns them. When the history is unknown,
+            pace and novelty are not worded, since nothing about them was observed.
         templates: Groups and wording.
     """
     words = templates.wording.get(group_id) or {}
@@ -121,7 +123,11 @@ def render(group_id: str, features: FeatureValues, templates: Templates) -> str 
             return words["no_history"].format(amount=_number(features, "amount"))
         return words["plain"].format(amount=_number(features, "amount"))
 
+    history_unknown = math.isnan(_number(features, "n_prior_30d"))
+
     if group_id == "R02_VELOCITY":
+        if history_unknown:  # degraded scoring: the card's pace was never read
+            return None
         last_hour = int(_number(features, "txn_count_1h"))
         last_day = int(_number(features, "txn_count_24h"))
         since = _number(features, "secs_since_prev")
@@ -142,6 +148,8 @@ def render(group_id: str, features: FeatureValues, templates: Templates) -> str 
         return None if math.isnan(home) else words["home"].format(distance=home)
 
     if group_id == "R04_NOVELTY":
+        if history_unknown:
+            return None
         if _number(features, "is_new_merchant_30d") == 1:
             return words["new_merchant"]
         if _number(features, "is_new_category_30d") == 1:

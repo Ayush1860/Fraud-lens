@@ -104,6 +104,28 @@ FEATURE_NAMES: tuple[str, ...] = (
 """Model features in column order. ``category`` is a string; all others are numeric."""
 
 
+HISTORY_FEATURES: tuple[str, ...] = (
+    "amt_mean_30d",
+    "amt_std_30d",
+    "amt_max_30d",
+    "amt_ratio_30d",
+    "amt_zscore_30d",
+    "txn_count_1h",
+    "txn_count_24h",
+    "txn_count_7d",
+    "amt_sum_24h",
+    "secs_since_prev",
+    "dist_prev_km",
+    "speed_prev_kmh",
+    "is_new_merchant_30d",
+    "is_new_category_30d",
+    "n_merchants_24h",
+    "n_categories_24h",
+    "n_prior_30d",
+)
+"""Features that read the card's history. All others need only the transaction itself."""
+
+
 def normalise_category(category: str) -> str:
     """Return ``category`` if the model knows it, otherwise ``"unknown"``."""
     return category if category in _KNOWN_CATEGORIES else UNKNOWN_CATEGORY
@@ -237,3 +259,21 @@ def compute_features(txn: Transaction, history: Sequence[HistoryEntry]) -> Featu
         "log_city_pop": math.log1p(txn.city_pop),
         "n_prior_30d": n_prior,
     }
+
+
+def transaction_only_features(txn: Transaction) -> FeatureVector:
+    """Compute features when the card's history cannot be read (the degraded path).
+
+    Args:
+        txn: The transaction being scored. Its category must already be normalised.
+
+    Returns:
+        The same keys as ``compute_features``. Every feature in ``HISTORY_FEATURES`` is NaN:
+        the history is unknown, which is not the same as empty. A count of zero would tell
+        the model "first purchase on this card"; NaN sends it down the missing-value branch
+        each tree learned in training instead. Transaction-only features are unchanged.
+    """
+    features = compute_features(txn, ())
+    for name in HISTORY_FEATURES:
+        features[name] = math.nan
+    return features
