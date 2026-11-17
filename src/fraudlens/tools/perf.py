@@ -191,7 +191,15 @@ def run_summary(
             if h.count
         },
         "decisions": counter_deltas(before, after, "fraudlens_decisions_total", "decision"),
+        "degraded": int(
+            _total(after, "fraudlens_degraded_responses_total")
+            - _total(before, "fraudlens_degraded_responses_total")
+        ),
     }
+
+
+def _total(text: str, name: str) -> float:
+    return sum(value for sample, _, value in _samples(text) if sample == name)
 
 
 def _ms(value: float | None) -> str:
@@ -216,12 +224,13 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         "",
         "## Client latency (Locust), milliseconds",
         "",
-        "| Target rps | Achieved rps | Failures | p50 | p95 | p99 |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Target rps | Achieved rps | Failures | Degraded | p50 | p95 | p99 |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
     ]
     for run in report["runs"]:
         lines.append(
             f"| {run['target_rps']} | {run['achieved_rps']} | {run['failures']} | "
+            f"{run.get('degraded', 'n/a')} | "
             f"{_ms(run['p50_ms'])} | {_ms(run['p95_ms'])} | {_ms(run['p99_ms'])} |"
         )
     for run in report["runs"]:

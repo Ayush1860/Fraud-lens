@@ -2,12 +2,20 @@
 
 Each app gets its own registry, so several apps in one process (as in tests) never
 collide. All durations are in seconds.
+
+With several uvicorn workers, each is a separate process with its own counters. Set
+``PROMETHEUS_MULTIPROC_DIR`` (the Docker image does) and every worker writes its values to
+files there; ``/metrics`` then sums all workers instead of reporting whichever one answered.
 """
 
+import os
 from collections.abc import Mapping
 from typing import Any
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
+from prometheus_client.multiprocess import MultiProcessCollector
+
+MULTIPROC_ENV = "PROMETHEUS_MULTIPROC_DIR"
 
 STAGE_BUCKETS = (
     0.0001,
@@ -22,10 +30,29 @@ STAGE_BUCKETS = (
     0.064,
     0.128,
     0.256,
+    0.512,
+    1.024,
+    2.048,
 )
-"""Stage timings, seconds: fine enough to resolve sub-millisecond stages such as features."""
+"""Stage timings, seconds: fine enough to resolve sub-millisecond stages such as features,
+and wide enough to see a saturated stage."""
 
-LATENCY_BUCKETS = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.025, 0.05, 0.1, 0.15, 0.25, 0.5, 1.0)
+LATENCY_BUCKETS = (
+    0.001,
+    0.0025,
+    0.005,
+    0.01,
+    0.015,
+    0.025,
+    0.05,
+    0.1,
+    0.15,
+    0.25,
+    0.5,
+    1.0,
+    2.5,
+    5.0,
+)
 SCORE_BUCKETS = (0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 0.99, 1.0)
 
 
@@ -76,17 +103,20 @@ class ServiceMetrics:
             "Population stability index from the latest drift report.",
             ["kind", "name"],
             registry=self.registry,
+            multiprocess_mode="mostrecent",
         )
         self.drift_alarms = Gauge(
             "fraudlens_drift_alarms",
             "Number of alarms in the latest drift report.",
             registry=self.registry,
+            multiprocess_mode="mostrecent",
         )
         self.model = Gauge(
             "fraudlens_model_info",
             "Always 1; the label names the active model version.",
             ["version"],
             registry=self.registry,
+            multiprocess_mode="max",
         )
 
     def publish_drift(self, report: Mapping[str, Any]) -> None:
@@ -119,5 +149,10 @@ class ServiceMetrics:
             self.degraded.inc()
 
     def render(self) -> bytes:
-        """The metrics in the Prometheus text format."""
+        """The metrics in the Prometheus text format, summed over workers if multiprocess."""
+        directory = os.environ.get(MULTIPROC_ENV)
+        if directory:
+            registry = CollectorRegistry()
+            MultiProcessCollector(registry, path=directory)  # type: ignore[no-untyped-call]
+            return generate_latest(registry)
         return generate_latest(self.registry)

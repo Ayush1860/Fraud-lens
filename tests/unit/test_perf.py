@@ -23,6 +23,7 @@ fraudlens_stage_seconds_count{stage="model"} 10.0
 fraudlens_stage_seconds_sum{stage="model"} 0.005
 fraudlens_decisions_total{decision="approve"} 9.0
 fraudlens_decisions_total{decision="review"} 1.0
+fraudlens_degraded_responses_total 1.0
 """
 
 SCORE = 'route="/v1/transactions/score",method="POST",status="200"'
@@ -45,6 +46,7 @@ fraudlens_request_seconds_count{{{SCORE}}} 100.0
 fraudlens_request_seconds_sum{{{SCORE}}} 0.6
 fraudlens_decisions_total{{decision="approve"}} 99.0
 fraudlens_decisions_total{{decision="review"}} 11.0
+fraudlens_degraded_responses_total 5.0
 """
 
 LOCUST_CSV = (
@@ -131,7 +133,8 @@ def test_a_run_summary_renders_as_a_table(tmp_path: Path) -> None:
     assert run["server_score_ms"]["p50"] == pytest.approx(5.0)
     assert run["stages"]["model"]["mean_ms"] == pytest.approx(2.0)
     assert run["decisions"] == {"approve": 90.0, "review": 10.0}
-    assert "| 100 | 99.8 | 10 | 8.00 | 16.00 | 31.00 |" in text
+    assert "| 100 | 99.8 | 10 | 4 | 8.00 | 16.00 | 31.00 |" in text
+    assert run["degraded"] == 4
     assert "Example CPU" in text
     assert "| model |" in text
 
@@ -163,3 +166,18 @@ def test_the_driver_runs_each_rate_and_writes_both_reports(
     assert '"target_rps": 200' in report
     assert (tmp_path / "trial.md").read_text(encoding="utf-8").startswith("# Load test: trial")
     assert loadtest.machine_spec()["cpus"]
+
+
+def test_metrics_render_from_the_multiprocess_directory_when_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fraudlens.service.metrics import MULTIPROC_ENV, ServiceMetrics
+
+    metrics = ServiceMetrics()
+    metrics.decided("approve", degraded=False, replayed=False, score=0.01)
+    assert b"fraudlens_decisions_total" in metrics.render()
+
+    monkeypatch.setenv(MULTIPROC_ENV, str(tmp_path))
+    # Nothing has been written to the directory by a worker, so nothing is reported:
+    # the scrape reads the workers' files, not this process's registry.
+    assert b"fraudlens_decisions_total" not in metrics.render()
