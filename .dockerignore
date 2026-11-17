@@ -1,0 +1,18 @@
+# Only pyproject.toml, uv.lock, src/, alembic.ini and migrations/ are needed.
+.git
+.venv
+data
+models
+docs
+*.md
+notebooks
+tests
+web
+infra
+.env
+**/__pycache__
+**/*.pyc
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage

@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup lint format typecheck test test-data up down \
-        data features train evaluate serve replay load report all
+.PHONY: help setup lint format typecheck test test-data test-integration up down \
+        data features train evaluate migrate serve replay load report all
 
 help: ## List the available targets
 	@grep -E '^[a-z -]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-12s %s\n", $$1, $$2}'
@@ -27,7 +27,7 @@ test: ## Unit, property and parity tests with the coverage gate
 test-data: ## Checks that need the real datasets (run after `make data features`)
 	uv run pytest -m data
 
-up: ## Start Postgres and Redis and wait until both are healthy
+up: ## Start Postgres, Redis and the service, and wait until all are healthy
 	docker compose up -d --wait
 
 down: ## Stop the local stores (data volumes are kept)
@@ -54,8 +54,23 @@ train: ## Imbalance study, tuning, final fit and ULB benchmark (DEVICE=cuda on a
 evaluate: ## The one-time test-set evaluation of the newest bundle, then the report
 	uv run python -m fraudlens.training evaluate
 
-serve replay: ## Phase 4: scoring service and replay client
-	@echo "make $@: not implemented yet (phase 4: scoring service)"; exit 1
+migrate: ## Apply the audit-database migrations
+	uv run alembic upgrade head
+
+serve: migrate ## Run the scoring service locally on port 8000
+	uv run uvicorn fraudlens.service.app:create_app --factory --port 8000
+
+REPLAY_ARGS ?= --limit 5000 --rate 50 --warm-days 30
+
+replay: ## Replay the public test file through the running service
+	uv run python -m fraudlens.tools.replay $(REPLAY_ARGS)
+
+TEST_DATABASE_URL ?= postgresql+asyncpg://fraudlens:local-dev-only-change-me@localhost:5432/fraudlens
+TEST_REDIS_URL ?= redis://localhost:6379/15
+
+test-integration: ## Service tests against real stores (start them with `make up`)
+	FRAUDLENS_TEST_DATABASE_URL=$(TEST_DATABASE_URL) FRAUDLENS_TEST_REDIS_URL=$(TEST_REDIS_URL) \
+	uv run pytest -m integration
 
 load report: ## Phase 6: load test and generated report
 	@echo "make $@: not implemented yet (phase 6: monitoring, load test and documents)"; exit 1
