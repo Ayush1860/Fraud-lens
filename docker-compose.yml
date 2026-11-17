@@ -1,7 +1,8 @@
 name: fraudlens
 
-# Local stores for development and integration tests.
-# Both ports bind to loopback only; nothing here is reachable from the network.
+# The scoring service and its stores, for local development and integration tests.
+# Every port binds to loopback only; nothing here is reachable from the network.
+# The api service loads the newest bundle under ./models (mounted read-only).
 
 services:
   postgres:
@@ -36,6 +37,24 @@ services:
       timeout: 3s
       retries: 12
       start_period: 5s
+    restart: unless-stopped
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      # Inside the Compose network the stores are reached by service name.
+      FRAUDLENS_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      FRAUDLENS_REDIS_URL: redis://redis:6379/0
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

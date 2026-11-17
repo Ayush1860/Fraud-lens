@@ -89,6 +89,27 @@ def next_version(models_dir: Path, today: date) -> str:
     return f"{prefix}.{max(taken, default=0) + 1}"
 
 
+def latest_bundle(models_dir: Path) -> Path:
+    """Return the newest release directory under ``models_dir``, by date then sequence.
+
+    Raises:
+        FileNotFoundError: if ``models_dir`` holds no release.
+    """
+    releases = [
+        (match.group(1), int(match.group(2)), path)
+        for path in (models_dir.iterdir() if models_dir.exists() else [])
+        if path.is_dir() and (match := _VERSION.match(path.name))
+    ]
+    if not releases:
+        raise FileNotFoundError(f"no model bundle under {models_dir}")
+    return max(releases)[2]
+
+
+def manifest_sha256(directory: Path) -> str:
+    """Return the hex SHA-256 of a bundle's manifest, which pins every file in it."""
+    return sha256_file(directory / MANIFEST)
+
+
 def write_bundle(
     directory: Path,
     *,

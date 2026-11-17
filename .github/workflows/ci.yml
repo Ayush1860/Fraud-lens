@@ -47,22 +47,66 @@ jobs:
       - run: uv sync --locked
       - run: uv run pytest -m "not integration and not data" --cov --cov-report=term-missing
 
+  integration:
+    name: Service integration tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.7-alpine
+        env:
+          POSTGRES_USER: fraudlens
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: fraudlens
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fraudlens -d fraudlens"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+      redis:
+        image: redis:8.10.3-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      FRAUDLENS_TEST_DATABASE_URL: postgresql+asyncpg://fraudlens:ci-only@localhost:5432/fraudlens
+      FRAUDLENS_TEST_REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pytest -m integration
+
   compose:
-    name: Compose stores healthy
+    name: Compose service healthy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
       - run: cp configs/.env.example .env
-      - name: Start Postgres and Redis and wait for health checks
-        run: docker compose up -d --wait --wait-timeout 120
-      - name: Assert both containers report healthy
+      - name: Release a toy model bundle for the service to load
+        run: |
+          uv sync --locked
+          uv run python tests/toy_bundle.py models
+      - name: Build and start the service and its stores, and wait for health checks
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - name: Assert every container reports healthy
         run: |
           docker compose ps
-          for service in postgres redis; do
+          for service in postgres redis api; do
             status=$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q "$service")")
             echo "$service: $status"
             test "$status" = "healthy"
           done
+      - name: Score one transaction through the running container
+        run: |
+          curl --fail-with-body -s http://127.0.0.1:8000/readyz
+          curl --fail-with-body -s -X POST http://127.0.0.1:8000/v1/transactions/score \
+            -H "X-API-Key: local-dev-only-change-me" -H "Content-Type: application/json" \
+            -d '{"transaction_id":"ci0001","card_id":"c_0123456789abcdef","event_time":"2020-08-14T03:12:44Z","amount":336.1,"category":"shopping_net","merchant_id":"m_4411"}'
       - name: Logs
         if: always()
         run: docker compose logs --no-color
