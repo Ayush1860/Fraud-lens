@@ -7,6 +7,10 @@ authors = [
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic>=1.20.1",
+    "asyncpg>=0.32.0",
+    "fastapi>=0.163.2",
+    "httpx>=0.28.1",
     "imbalanced-learn>=0.14.2",
     "kagglehub>=1.0.3",
     "matplotlib>=3.11.2",
@@ -14,11 +18,15 @@ dependencies = [
     "optuna>=5.1.0",
     "pandas>=3.1.1",
     "pandera>=0.36.0",
+    "prometheus-client>=0.26.0",
     "pyarrow>=26.0.1",
     "pydantic>=2.14.3",
     "pydantic-settings>=2.16.3",
     "pyyaml>=6.0.3",
+    "redis>=8.1.0",
     "scikit-learn>=1.9.1",
+    "sqlalchemy[asyncio]>=2.1.8",
+    "uvicorn>=0.54.0",
     "xgboost>=3.4.1",
 ]
 
@@ -87,10 +95,13 @@ skip_covered = true
 
 [dependency-groups]
 dev = [
+    "asgi-lifespan>=2.1.0",
+    "fakeredis[lua]>=2.40.0",
     "hypothesis>=6.170.15",
     "mypy>=2.4.1",
     "pandas-stubs>=3.1.0.261029",
     "pre-commit>=4.7.0",
+    "psycopg[binary]>=3.3.9",
     "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.5",
