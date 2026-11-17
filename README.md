@@ -20,7 +20,7 @@ until it is generated from an artefact by `make report`.
 | --- | --- | --- |
 | 0 | Scaffold: tooling, settings, logging, Compose stores, CI | Done |
 | 1 | Data checks, PII handling, time splits, the single feature definition | Done |
-| 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | Next |
+| 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | In progress |
 | 3 | Contributions and reason codes | Planned |
 | 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Planned |
 | 5 | React analyst console | Planned |
@@ -51,9 +51,19 @@ make features   # build the feature tables -> data/processed/
 make test-data  # re-run the parity check on 5,000 real transactions
 ```
 
+Then train and evaluate:
+
+```bash
+make train            # imbalance study, tuning, final fit, ULB benchmark (DEVICE=cuda for a GPU)
+make evaluate         # the one-time test-set evaluation, then docs/results/report.md
+```
+
+Training is heavy on a laptop CPU. `notebooks/colab_training.ipynb` runs the same steps on
+a free Google Colab GPU and packages the results to bring back.
+
 Other targets: `make lint`, `make typecheck`, `make format`, `make down`, `make help`.
-The remaining pipeline targets (`train`, `evaluate`, `serve`, `replay`, `load`, `report`)
-are stubs that fail with the phase they arrive in.
+The remaining pipeline targets (`serve`, `replay`, `load`, `report`) are stubs that fail
+with the phase they arrive in.
 
 Without Make, run the underlying commands directly, for example `uv sync --locked`,
 `uv run python -m fraudlens.data.download` and
@@ -98,6 +108,26 @@ training. A parity test fails on any row where the two disagree.
   slice and a calibration slice. The public test partition is not read until the final
   evaluation.
 
+## Training
+
+`python -m fraudlens.training <step>` runs one step; `configs/training.yaml` and
+`configs/costs.yaml` hold every setting, with the cost assumptions written beside them.
+
+- **Imbalance study.** Seven arms (logistic regression, then XGBoost with no weighting,
+  full and square-root `scale_pos_weight`, `max_delta_step`, undersampling with prior
+  correction, and SMOTE) over five seeds, with 95% day-block bootstrap intervals.
+  Resampling touches training rows only.
+- **Tuning.** Optuna over three prequential folds, maximising mean average precision.
+- **Release.** The training slice fits the model, the early validation slice stops it,
+  and the late validation slice fits the isotonic calibrator and chooses the review and
+  block thresholds by expected cost within the analysts' daily capacity.
+- **Bundle.** `models/<version>/` holds the booster, calibrator, thresholds, threshold
+  curve, drift reference histograms, metrics and provenance. `manifest.json` lists the
+  SHA-256 of every file, and loading fails if any file is missing, extra or changed.
+- **Final test.** `fraudlens.training.evaluate.final_test` is the only reader of the test
+  partition and refuses to score a bundle twice. It adds a fairness check of
+  false-positive rates by gender and age band; the model never sees gender.
+
 ## Configuration
 
 Settings are read from `FRAUDLENS_*` environment variables, or from a `.env` file in the
@@ -107,11 +137,11 @@ values. Secrets have no defaults: the process refuses to start without them.
 ## Layout
 
 ```text
-configs/          .env.example (training and cost configs arrive in phase 2)
+configs/          .env.example, training.yaml, costs.yaml
 data/             gitignored: raw, interim and processed data
 models/           gitignored model bundles
-docs/             design notes, journal, performance reports
-notebooks/        01_eda.ipynb (results only; no logic lives in notebooks)
+docs/             design notes, journal, performance reports, results/ from training
+notebooks/        01_eda.ipynb, colab_training.ipynb (no logic lives in notebooks)
 src/fraudlens/
   common/         settings, logging, hashing, shared types
   data/           download, schema checks, PII handling, time splits

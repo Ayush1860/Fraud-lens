@@ -60,3 +60,40 @@ A dated log of bugs, surprises and decisions.
   genuine transactions. Distance features will be weak on this data. See
   `notebooks/01_eda.ipynb`.
 - **Finding:** no card reaches the 500-entry history cap in Sparkov.
+
+## 2026-11-17 — Phase 2 modelling pipeline
+
+- **Decision:** training runs on Google Colab, because the 7-arm, 5-seed study plus 40
+  Optuna trials over three folds is too slow on the laptop CPU. The notebook
+  `notebooks/colab_training.ipynb` holds no logic: it clones this branch and runs
+  `python -m fraudlens.training <step>`, the same tested code the laptop would run. Every
+  step saves to Google Drive, and tuning stores its trials in SQLite so a disconnect
+  loses at most one trial.
+- **Decision:** the calibrator is stored as isotonic breakpoints and applied with
+  `numpy.interp`, which reproduces `IsotonicRegression.predict` exactly. No pickle is
+  loaded at serving time.
+- **Decision:** the release's calibrator maps the booster's own probability (the logistic
+  of its margin) to a calibrated one. For the undersampling arm this absorbs the prior
+  correction, because both maps are monotone, so serving never needs to know which arm
+  produced the model.
+- **Decision:** ranking metrics on the test set use the uncalibrated score. Isotonic
+  calibration is a step function, so it would turn distinct scores into ties and make
+  the top 1% of a day partly arbitrary.
+- **Decision:** threshold search tries every pair of candidate thresholds, using totals
+  above each candidate so each pair costs O(1). A test checks it against a brute-force
+  search, and the same totals are exported as the threshold lab's curve.
+- **Decision:** SMOTE seeds only from frauds with no missing feature, because
+  interpolation is undefined for a missing value, and uses SMOTE-NC so the categorical
+  column never gets an invented category. The rows with missing values stay in training.
+- **Decision:** bootstrap intervals for the alert metrics and the Brier score are
+  computed from per-day totals. Alerts are chosen per day, so a resampled day keeps the
+  alerts it had, and the result is exact without re-ranking each resample.
+- **Decision:** dropped MLflow. Optuna's own storage records every trial, and
+  `tuning.json` is the committed record.
+- **Decision:** the ULB benchmark has no 7-day gap, because the dataset covers two days.
+  Hours replace days as the bootstrap and alert-budget block.
+- **Smoke run:** before handing off to Colab, the experiment and release steps ran on the
+  real data with one seed and 20 trees, without reading the test set. All seven arms
+  trained in under a minute, and the bundle verified and reloaded. With only 20 trees,
+  plain XGBoost already reached an average precision near 0.95 on validation. That is
+  the risk the plan names, "scores look near-perfect on Sparkov", arriving on time.
