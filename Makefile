@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 .PHONY: help setup lint format typecheck test test-data test-integration up down \
-        data features train evaluate migrate serve replay load report all
+        data features train evaluate migrate serve replay console test-web e2e load report all
 
 help: ## List the available targets
 	@grep -E '^[a-z -]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-12s %s\n", $$1, $$2}'
@@ -67,6 +67,15 @@ replay: ## Replay the public test file through the running service
 
 TEST_DATABASE_URL ?= postgresql+asyncpg://fraudlens:local-dev-only-change-me@localhost:5432/fraudlens
 TEST_REDIS_URL ?= redis://localhost:6379/15
+
+console: ## Run the console dev server on http://localhost:5173 (needs Node 22.12+)
+	cd web && npm ci && npm run dev
+
+test-web: ## Console lint, types and component tests
+	cd web && npm ci && npm run format:check && npm run lint && npm run typecheck && npm test
+
+e2e: ## Console smoke test against the running stack (`make up` first)
+	cd web && npx playwright install chromium && npx playwright test
 
 test-integration: ## Service tests against real stores (start them with `make up`)
 	FRAUDLENS_TEST_DATABASE_URL=$(TEST_DATABASE_URL) FRAUDLENS_TEST_REDIS_URL=$(TEST_REDIS_URL) \
