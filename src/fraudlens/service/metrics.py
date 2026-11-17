@@ -9,6 +9,22 @@ from typing import Any
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
 
+STAGE_BUCKETS = (
+    0.0001,
+    0.00025,
+    0.0005,
+    0.001,
+    0.002,
+    0.004,
+    0.008,
+    0.016,
+    0.032,
+    0.064,
+    0.128,
+    0.256,
+)
+"""Stage timings, seconds: fine enough to resolve sub-millisecond stages such as features."""
+
 LATENCY_BUCKETS = (0.001, 0.0025, 0.005, 0.01, 0.015, 0.025, 0.05, 0.1, 0.15, 0.25, 0.5, 1.0)
 SCORE_BUCKETS = (0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 0.99, 1.0)
 
@@ -30,7 +46,7 @@ class ServiceMetrics:
             "fraudlens_stage_seconds",
             "Latency of each stage of the scoring hot path, in seconds.",
             ["stage"],
-            buckets=LATENCY_BUCKETS,
+            buckets=STAGE_BUCKETS,
             registry=self.registry,
         )
         self.decisions = Counter(
