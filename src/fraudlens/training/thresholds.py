@@ -11,6 +11,7 @@ totals above each candidate, so every pair costs O(1) and the full search is exa
 The same totals are exported as the threshold curve the console's threshold lab reads.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -18,6 +19,7 @@ import numpy as np
 import numpy.typing as npt
 
 from fraudlens.training.config import CostConfig
+from fraudlens.training.metrics import Costs
 
 FloatArray = npt.NDArray[np.float64]
 IntArray = npt.NDArray[np.int64]
@@ -170,6 +172,45 @@ def threshold_curve(
             for i in range(len(grid))
         ],
     }
+
+
+_TOTALS = ("count", "frauds", "fraud_amount", "genuine", "genuine_amount")
+
+
+def price_curve(curve: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Price every ``(t_review, t_block)`` pair on a curve from :func:`threshold_curve`.
+
+    The pricing is :func:`pair_costs`, the same function that chose the released
+    thresholds, so the threshold lab and the release can never disagree.
+
+    Args:
+        curve: The bundle's ``threshold_curve.json``.
+
+    Returns:
+        One entry per pair with ``review <= block`` (indices into ``curve["points"]``):
+        ``cost_per_1000`` (dollars per 1,000 transactions), ``review_share`` (share of
+        transactions sent to review) and ``within_capacity`` (whether that share fits the
+        analysts' daily capacity).
+    """
+    points = curve["points"]
+    totals = {key: np.array([p[key] for p in points], dtype=np.float64) for key in _TOTALS}
+    stated = curve["costs"]
+    config = CostConfig(
+        Costs(stated["review_cost"], stated["margin_rate"], stated["friction_cost"]),
+        stated["review_capacity_share"],
+    )
+    cost, share = pair_costs(totals, int(curve["rows"]), float(curve["fraud_amount"]), config)
+    return [
+        {
+            "review": review,
+            "block": block,
+            "cost_per_1000": float(cost[review, block]),
+            "review_share": float(share[review, block]),
+            "within_capacity": bool(share[review, block] <= config.review_capacity_share + 1e-12),
+        }
+        for review in range(len(points))
+        for block in range(review, len(points))
+    ]
 
 
 def decide(probability: FloatArray, thresholds: Thresholds) -> IntArray:
