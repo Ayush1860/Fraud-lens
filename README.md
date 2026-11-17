@@ -13,8 +13,9 @@ response leaves.
 
 ## Status
 
-The project is built in phases, one pull request each. No metric appears in this README
-until it is generated from an artefact by `make report`.
+The project is built in phases, one pull request each. Every metric in this README is
+generated from a committed artefact by `make report`, and a test fails if one is edited
+by hand.
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -29,7 +30,22 @@ until it is generated from an artefact by `make report`.
 
 ## Results
 
-The model report, with the imbalance study, the one-time test evaluation, a fairness
+<!-- report:start -->
+Release `2026-11-17.1`, scored once on the public test file: 555,719 transactions over 194 days, 2,145 frauds. Intervals are 95% day-block bootstrap intervals. Simulated data: these numbers show method, not real-world accuracy.
+
+| Measure | Test result |
+| --- | --- |
+| Average precision | 0.974 [0.967, 0.980] |
+| Frauds caught when 1% of traffic is reviewed | 0.944 [0.918, 0.965] |
+| Fraud dollars caught at the same budget | 0.966 [0.947, 0.982] |
+| Precision of those alerts | 0.358 [0.319, 0.402] |
+| Expected cost per 1,000 transactions | $27.68, against $2,039.38 for approving everything |
+| Explanations | contributions add up to the margin within 2.5e-05 log-odds on 10,000 rows; top three reasons unchanged by a 1% amount change for 97.8% of 1,000 flagged rows |
+<!-- report:end -->
+
+The model card ([docs/model_card.md](docs/model_card.md)) and the validation report
+([docs/validation_report.md](docs/validation_report.md)) are generated the same way. The
+model report, with the imbalance study, the one-time test evaluation, a fairness
 check and the ULB benchmark, is generated from training artefacts:
 [docs/results/report.md](docs/results/report.md). Every number in it comes from a JSON
 file beside it; none is typed by hand.
@@ -84,7 +100,8 @@ copy a released bundle there. Without one the service refuses to start.
 `make serve` runs the service outside Docker instead.
 
 Other targets: `make lint`, `make typecheck`, `make format`, `make down`, `make help`.
-The remaining targets (`load`, `report`) are stubs that fail with the phase they arrive in.
+`make report` regenerates every number in the documents from committed artefacts;
+`make load` runs the load test against a running service.
 
 Without Make, run the underlying commands directly, for example `uv sync --locked`,
 `uv run python -m fraudlens.data.download` and
