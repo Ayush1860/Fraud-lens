@@ -3,6 +3,7 @@
 import hmac
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Protocol
 
 from fastapi import HTTPException, Request, Security, status
@@ -12,7 +13,12 @@ from fraudlens.common.settings import Settings
 from fraudlens.explain.reason_codes import Templates
 from fraudlens.service.decision import AuditLog, DecisionEngine, FeatureStore
 from fraudlens.service.metrics import ServiceMetrics
-from fraudlens.service.repository import AlertRow, DispositionRow, RecentDecision
+from fraudlens.service.repository import (
+    AlertRow,
+    CardTransaction,
+    DispositionRow,
+    RecentDecision,
+)
 from fraudlens.training.bundle import ModelBundle
 
 
@@ -52,6 +58,14 @@ class ServiceAudit(AuditLog, Protocol):
 
     async def recent_decisions(self, limit: int) -> list[RecentDecision]:
         """The newest decisions, newest first."""
+
+    async def card_history(
+        self, card_id: str, *, until: datetime, limit: int
+    ) -> list[CardTransaction]:
+        """The card's decisions at or before ``until``, newest first."""
+
+    async def disposition_counts(self) -> dict[str, int]:
+        """Alerts per label, counting each alert's latest label."""
 
 
 @dataclass

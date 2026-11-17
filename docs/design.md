@@ -84,6 +84,18 @@ is no record of why money moved or did not, which a bank cannot accept.
   `pred_contribs` block the loop while they run. Inline against a thread pool is
   measured in phase 6 with the load test, and the faster one is kept.
 
+## The console's access to the API
+
+The console calls `/api` on its own origin. nginx forwards those calls to the service and
+adds the `X-API-Key` header, so the key never reaches the browser. The consequence is that
+anyone who can reach the console's port can use the API through it: in Compose it binds to
+loopback, and the public demo in phase 7 has to put its own access control in front.
+
+The alert queue polls every 5 seconds. At a few hundred alerts a day that is a handful of
+small requests per analyst per minute. Polling stops being enough when analysts need to
+see an alert within a second or two, or when enough analysts are polling that the queue
+query itself becomes load; then the service would push new alerts over server-sent events.
+
 ## The replay client
 
 `python -m fraudlens.tools.replay` reads `data/raw/sparkov/fraudTest.csv`, validates it,

@@ -3,6 +3,7 @@ name: fraudlens
 # The scoring service and its stores, for local development and integration tests.
 # Every port binds to loopback only; nothing here is reachable from the network.
 # The api service loads the newest bundle under ./models (mounted read-only).
+# The web service is the analyst console on http://127.0.0.1:8080.
 
 services:
   postgres:
@@ -54,6 +55,21 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    environment:
+      # nginx adds the key to /api requests; the browser never holds it.
+      FRAUDLENS_API_KEY: ${FRAUDLENS_API_KEY:?copy configs/.env.example to .env}
+      FRAUDLENS_API_UPSTREAM: api:8000
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      api:
         condition: service_healthy
     restart: unless-stopped
 

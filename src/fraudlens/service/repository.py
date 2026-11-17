@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 from typing import Any, TypeVar
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB, insert
+from sqlalchemy.dialects.postgresql import JSONB, distinct_on, insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -138,6 +138,21 @@ class AlertRow:
     amount: float
     category: str
     event_time: datetime
+    top_reason: str | None
+    """Wording of the leading reason code, or ``None`` if none could be worded."""
+
+
+@dataclass(frozen=True, slots=True)
+class CardTransaction:
+    """One earlier decision on a card, for the case view's history table."""
+
+    transaction_id: str
+    event_time: datetime
+    amount: float
+    category: str
+    decision: str
+    risk_score: float
+    degraded: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -316,6 +331,7 @@ class Repository:
                 decisions.c.amount,
                 decisions.c.category,
                 decisions.c.event_time,
+                decisions.c.reason_codes[0]["text"].astext.label("top_reason"),
             )
             .join(decisions, decisions.c.transaction_id == alerts.c.transaction_id)
             .order_by(alerts.c.priority.desc(), alerts.c.id.desc())
@@ -409,5 +425,57 @@ class Repository:
                     )
                 ).all()
             return [RecentDecision(float(s), d, bool(g), int(ms)) for s, d, g, ms in rows]
+
+        return await self._guard(run())
+
+    async def card_history(
+        self, card_id: str, *, until: datetime, limit: int
+    ) -> list[CardTransaction]:
+        """The card's decisions at or before ``until`` (UTC), newest first, at most ``limit``.
+
+        Ties in ``event_time`` are broken by ``transaction_id``, as in the feature definition.
+        """
+        query = (
+            sa.select(
+                decisions.c.transaction_id,
+                decisions.c.event_time,
+                decisions.c.amount,
+                decisions.c.category,
+                decisions.c.decision,
+                decisions.c.score.label("risk_score"),
+                decisions.c.degraded,
+            )
+            .where(decisions.c.card_id == card_id, decisions.c.event_time <= until)
+            .order_by(decisions.c.event_time.desc(), decisions.c.transaction_id.desc())
+            .limit(limit)
+        )
+
+        async def run() -> list[CardTransaction]:
+            async with self.engine.connect() as conn:
+                rows = (await conn.execute(query)).mappings().all()
+            return [CardTransaction(**dict(row)) for row in rows]
+
+        return await self._guard(run())
+
+    async def disposition_counts(self) -> dict[str, int]:
+        """How many alerts carry each label, counting only each alert's latest label."""
+        latest = (
+            sa.select(dispositions.c.alert_id, dispositions.c.label)
+            .ext(distinct_on(dispositions.c.alert_id))
+            .order_by(
+                dispositions.c.alert_id,
+                dispositions.c.created_at.desc(),
+                dispositions.c.id.desc(),
+            )
+            .subquery()
+        )
+        query = sa.select(latest.c.label, sa.func.count()).group_by(latest.c.label)
+
+        async def run() -> dict[str, int]:
+            async with self.engine.connect() as conn:
+                rows = (await conn.execute(query)).all()
+            counts = {"fraud": 0, "genuine": 0}
+            counts.update({label: int(n) for label, n in rows})
+            return counts
 
         return await self._guard(run())

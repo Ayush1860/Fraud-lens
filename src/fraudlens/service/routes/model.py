@@ -9,8 +9,15 @@ from fastapi import APIRouter, Depends, Response, status
 from fraudlens.features.definitions import CATEGORIES, FEATURE_NAMES
 from fraudlens.features.encoding import FEATURE_TYPES
 from fraudlens.service.repository import RecentDecision
-from fraudlens.service.schemas import Health, ModelInfo, MonitoringSummary, Readiness
+from fraudlens.service.schemas import (
+    Health,
+    ModelInfo,
+    MonitoringSummary,
+    Readiness,
+    ThresholdLab,
+)
 from fraudlens.service.state import ServiceState, get_state, require_api_key
+from fraudlens.training.thresholds import price_curve
 
 router = APIRouter(prefix="/v1", dependencies=[Depends(require_api_key)])
 health = APIRouter()
@@ -39,14 +46,50 @@ async def get_model(state: State) -> Any:
     }
 
 
+@router.get("/model/threshold-curve", response_model=ThresholdLab)
+async def get_threshold_curve(state: State) -> Any:
+    """The validation threshold curve with every threshold pair priced.
+
+    Prices come from the same function that chose the released thresholds.
+    """
+    bundle = state.bundle
+    curve = bundle.documents["threshold_curve.json"]
+    thresholds = [point["threshold"] for point in curve["points"]]
+    return {
+        "model_version": bundle.version,
+        "rows": curve["rows"],
+        "days": curve["days"],
+        "frauds": curve["frauds"],
+        "fraud_amount": curve["fraud_amount"],
+        "costs": curve["costs"],
+        "points": curve["points"],
+        "pairs": price_curve(curve),
+        "current_review": _nearest(thresholds, bundle.thresholds.t_review),
+        "current_block": _nearest(thresholds, bundle.thresholds.t_block),
+    }
+
+
+def _nearest(values: Sequence[float], target: float) -> int:
+    return min(range(len(values)), key=lambda i: abs(values[i] - target))
+
+
 @router.get("/monitoring/summary", response_model=MonitoringSummary)
 async def get_monitoring_summary(state: State) -> Any:
-    """Decision mix, score histogram and latency over the newest 10,000 decisions."""
+    """Decision mix, score histogram, latency and analyst labels.
+
+    Everything except the labels covers the newest 10,000 decisions.
+    """
     recent = await state.audit.recent_decisions(SUMMARY_WINDOW)
-    return summarise(recent, model_version=state.bundle.version)
+    labels = await state.audit.disposition_counts()
+    return summarise(recent, model_version=state.bundle.version, labels=labels)
 
 
-def summarise(recent: Sequence[RecentDecision], *, model_version: str) -> dict[str, Any]:
+def summarise(
+    recent: Sequence[RecentDecision],
+    *,
+    model_version: str,
+    labels: dict[str, int] | None = None,
+) -> dict[str, Any]:
     """Summarise recent decisions; percentiles are ``None`` when there are none."""
     total = len(recent)
     kinds = [d.decision for d in recent]
@@ -71,7 +114,18 @@ def summarise(recent: Sequence[RecentDecision], *, model_version: str) -> dict[s
         "alert_rate": (total - kinds.count("approve")) / total if total else None,
         "score_histogram": {"edges": edges.tolist(), "counts": counts.tolist()},
         "latency_ms": {"p50": percentile(50), "p95": percentile(95), "p99": percentile(99)},
+        "dispositions": _label_summary(labels or {}),
         "drift": None,
+    }
+
+
+def _label_summary(labels: dict[str, int]) -> dict[str, Any]:
+    fraud, genuine = labels.get("fraud", 0), labels.get("genuine", 0)
+    labelled = fraud + genuine
+    return {
+        "fraud": fraud,
+        "genuine": genuine,
+        "realised_precision": fraud / labelled if labelled else None,
     }
 
 

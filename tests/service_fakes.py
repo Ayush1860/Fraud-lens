@@ -22,6 +22,7 @@ from fraudlens.service.decision import (
 )
 from fraudlens.service.repository import (
     AlertRow,
+    CardTransaction,
     DispositionRow,
     RecentDecision,
     decode_cursor,
@@ -159,6 +160,7 @@ class MemoryAudit:
                     amount=record.amount,
                     category=record.category,
                     event_time=datetime.fromtimestamp(record.event_ts, tz=UTC),
+                    top_reason=record.reason_codes[0].text if record.reason_codes else None,
                 )
             )
         if cursor is not None:
@@ -194,6 +196,39 @@ class MemoryAudit:
         return [
             RecentDecision(r.score, r.decision, r.degraded, r.latency_ms) for r in newest[:limit]
         ]
+
+    async def card_history(
+        self, card_id: str, *, until: datetime, limit: int
+    ) -> list[CardTransaction]:
+        self._check()
+        cutoff = until.timestamp()
+        rows = sorted(
+            (r for r in self.decisions.values() if r.card_id == card_id and r.event_ts <= cutoff),
+            key=lambda r: (r.event_ts, r.transaction_id),
+            reverse=True,
+        )
+        return [
+            CardTransaction(
+                r.transaction_id,
+                datetime.fromtimestamp(r.event_ts, tz=UTC),
+                r.amount,
+                r.category,
+                r.decision,
+                r.score,
+                r.degraded,
+            )
+            for r in rows[:limit]
+        ]
+
+    async def disposition_counts(self) -> dict[str, int]:
+        self._check()
+        latest: dict[int, str] = {}
+        for row in self.dispositions:
+            latest[row.alert_id] = row.label
+        counts = {"fraud": 0, "genuine": 0}
+        for label in latest.values():
+            counts[label] += 1
+        return counts
 
 
 class RecordingObserver:

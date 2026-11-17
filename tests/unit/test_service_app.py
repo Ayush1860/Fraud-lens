@@ -234,3 +234,44 @@ async def test_a_tampered_bundle_stops_start_up(toy_bundle_dir: Path, tmp_path: 
     with pytest.raises(BundleIntegrityError, match=r"changed thresholds.json"):
         async with LifespanManager(app):
             pass
+
+
+async def test_card_history_threshold_lab_and_labels(
+    client: httpx.AsyncClient, stores: tuple[MemoryStore, MemoryAudit]
+) -> None:
+    store, _ = stores
+    store.down = True
+    for i in range(4):
+        body = {
+            **BODY,
+            "transaction_id": f"h{i}",
+            "event_time": f"2019-06-01T03:1{i}:00Z",
+            "amount": 150.0 + i,
+        }
+        await client.post("/v1/transactions/score", json=body)
+
+    history = (await client.get("/v1/transactions/h2/card-history")).json()
+    assert [row["transaction_id"] for row in history] == ["h2", "h1", "h0"]
+    assert (await client.get("/v1/transactions/zz/card-history")).status_code == 404
+    assert (await client.get("/v1/transactions/h2/card-history?limit=0")).status_code == 422
+
+    lab = (await client.get("/v1/model/threshold-curve")).json()
+    points = lab["points"]
+    assert points[lab["current_review"]]["threshold"] <= points[lab["current_block"]]["threshold"]
+    assert len(lab["pairs"]) == len(points) * (len(points) + 1) // 2
+
+    alerts = (await client.get("/v1/alerts")).json()["items"]
+    assert all("top_reason" in a for a in alerts)
+    await client.post(
+        f"/v1/alerts/{alerts[0]['id']}/disposition", json={"label": "fraud", "analyst": "a"}
+    )
+    summary = (await client.get("/v1/monitoring/summary")).json()
+    assert summary["dispositions"] == {"fraud": 1, "genuine": 0, "realised_precision": 1.0}
+
+
+def test_a_summary_without_labels_has_no_precision() -> None:
+    assert summarise([], model_version="v")["dispositions"] == {
+        "fraud": 0,
+        "genuine": 0,
+        "realised_precision": None,
+    }

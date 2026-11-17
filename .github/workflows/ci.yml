@@ -78,8 +78,32 @@ jobs:
       - run: uv sync --locked
       - run: uv run pytest -m integration
 
+  web:
+    name: Console lint, types, tests and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 26.13.1
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: API types match the OpenAPI snapshot
+        run: |
+          npm run api:types
+          git diff --exit-code src/api/schema.ts
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
   compose:
-    name: Compose service healthy
+    name: Compose stack and console smoke test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -96,7 +120,7 @@ jobs:
       - name: Assert every container reports healthy
         run: |
           docker compose ps
-          for service in postgres redis api; do
+          for service in postgres redis api web; do
             status=$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q "$service")")
             echo "$service: $status"
             test "$status" = "healthy"
@@ -107,6 +131,23 @@ jobs:
           curl --fail-with-body -s -X POST http://127.0.0.1:8000/v1/transactions/score \
             -H "X-API-Key: local-dev-only-change-me" -H "Content-Type: application/json" \
             -d '{"transaction_id":"ci0001","card_id":"c_0123456789abcdef","event_time":"2020-08-14T03:12:44Z","amount":336.1,"category":"shopping_net","merchant_id":"m_4411"}'
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 26.13.1
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Console smoke test in a real browser
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - name: Smoke test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: web/playwright-report
       - name: Logs
         if: always()
         run: docker compose logs --no-color

@@ -127,6 +127,18 @@ class DecisionRecordOut(BaseModel):
     created_at: datetime
 
 
+class CardTransactionOut(BaseModel):
+    """One decision on the same card, for the case view's history table."""
+
+    transaction_id: str
+    event_time: datetime
+    amount: float
+    category: str
+    decision: Decision
+    risk_score: float
+    degraded: bool
+
+
 class FeatureContribution(BaseModel):
     """One feature's value and its contribution to the margin, in log-odds."""
 
@@ -173,6 +185,8 @@ class AlertOut(BaseModel):
     category: str
     event_time: datetime
     created_at: datetime
+    top_reason: str | None
+    """Wording of the leading reason code, if one could be worded."""
 
 
 class AlertPage(BaseModel):
@@ -223,6 +237,58 @@ class ModelInfo(BaseModel):
     """The bundle's validation metrics, as released."""
 
 
+class CurvePoint(BaseModel):
+    """What happens on the validation slice when ``threshold`` is the alert threshold."""
+
+    threshold: float
+    count: float
+    """Transactions at or above the threshold."""
+    frauds: float
+    fraud_amount: float
+    genuine: float
+    genuine_amount: float
+    precision: float | None
+    recall: float | None
+    dollar_recall: float | None
+    alerts_per_day: float
+
+
+class PricedPair(BaseModel):
+    """One ``(t_review, t_block)`` pair, by index into ``points``, and its price."""
+
+    review: int
+    block: int
+    cost_per_1000: float
+    """Expected cost in dollars per 1,000 transactions on the validation slice."""
+    review_share: float
+    within_capacity: bool
+
+
+class CostAssumptions(BaseModel):
+    """The cost assumptions the thresholds were chosen with, in dollars."""
+
+    review_cost: float
+    margin_rate: float
+    friction_cost: float
+    review_capacity_share: float
+
+
+class ThresholdLab(BaseModel):
+    """Everything the threshold lab needs: the curve, every priced pair, the release."""
+
+    model_version: str
+    rows: int
+    days: int
+    frauds: float
+    fraud_amount: float
+    costs: CostAssumptions
+    points: list[CurvePoint]
+    pairs: list[PricedPair]
+    current_review: int
+    """Index into ``points`` of the released review threshold."""
+    current_block: int
+
+
 class Histogram(BaseModel):
     """Counts between consecutive edges; the last bin includes its right edge."""
 
@@ -248,6 +314,15 @@ class DecisionCounts(BaseModel):
     degraded: int
 
 
+class DispositionSummary(BaseModel):
+    """Analyst labels so far, counting each alert's latest label once."""
+
+    fraud: int
+    genuine: int
+    realised_precision: float | None
+    """Share of labelled alerts confirmed as fraud."""
+
+
 class MonitoringSummary(BaseModel):
     """The recent behaviour of the service, for the console's monitoring page."""
 
@@ -259,6 +334,7 @@ class MonitoringSummary(BaseModel):
     """Share of decisions sent to review or block."""
     score_histogram: Histogram
     latency_ms: LatencySummary
+    dispositions: DispositionSummary
     drift: dict[str, float] | None
     """Population stability index per feature; computed by the drift job (phase 6)."""
 

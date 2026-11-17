@@ -240,3 +240,52 @@ async def test_alert_queue_disposition_and_explanation(
     assert summary["decisions"]["degraded"] == 3
     assert unknown.status_code == 404
     assert count(db, "dispositions") == 1
+
+
+async def test_card_history_top_reason_and_realised_precision(
+    make_client: ClientFactory, txns: pd.DataFrame
+) -> None:
+    template = payload(txns, 30)
+    base = int(pd.Timestamp(template["event_time"]).timestamp())
+    async with make_client(redis=DEAD_REDIS_URL, degraded_review_amount=100.0) as client:
+        for i in range(25):
+            body = {
+                **template,
+                "transaction_id": f"card{i:02d}",
+                "event_time": pd.Timestamp(base + 60 * i, unit="s", tz="UTC").isoformat(),
+                "amount": 500.0 + i,
+            }
+            assert (await score(client, body)).status_code == 200
+        other = {**payload(txns, 31), "transaction_id": "othercard", "amount": 900.0}
+        await score(client, other)
+
+        history = (await client.get("/v1/transactions/card10/card-history")).json()
+        short = (
+            await client.get("/v1/transactions/card10/card-history", params={"limit": 3})
+        ).json()
+        missing = await client.get("/v1/transactions/nothing/card-history")
+
+        alerts = (await client.get("/v1/alerts", params={"limit": 200})).json()["items"]
+        by_id = {a["transaction_id"]: a for a in alerts}
+        for transaction_id, label in (
+            ("card00", "fraud"),
+            ("card01", "fraud"),
+            ("card02", "genuine"),
+        ):
+            alert_id = by_id[transaction_id]["id"]
+            await client.post(
+                f"/v1/alerts/{alert_id}/disposition", json={"label": "genuine", "analyst": "a"}
+            )
+            # The latest label on an alert is the one that counts.
+            await client.post(
+                f"/v1/alerts/{alert_id}/disposition", json={"label": label, "analyst": "a"}
+            )
+        summary = (await client.get("/v1/monitoring/summary")).json()
+
+    assert [t["transaction_id"] for t in history] == [f"card{i:02d}" for i in range(10, -1, -1)]
+    assert [t["transaction_id"] for t in short] == ["card10", "card09", "card08"]
+    assert history[0]["amount"] == 510.0
+    assert missing.status_code == 404
+    assert all(a["top_reason"] is None or isinstance(a["top_reason"], str) for a in alerts)
+    assert any(a["top_reason"] for a in alerts)
+    assert summary["dispositions"] == {"fraud": 2, "genuine": 1, "realised_precision": 2 / 3}
