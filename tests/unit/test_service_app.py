@@ -318,3 +318,20 @@ async def test_drift_reaches_the_summary_and_the_metrics(
     assert {f["feature"] for f in drift["features"]} >= {"amount", "category"}
     assert 'fraudlens_drift_psi{kind="feature",name="amount"}' in metrics
     assert "fraudlens_drift_alarms" in metrics
+
+
+async def test_the_model_scores_on_one_thread_per_process(
+    toy_bundle_dir: Path, stores: tuple[MemoryStore, MemoryAudit]
+) -> None:
+    import json
+
+    @asynccontextmanager
+    async def connect(_: Settings) -> AsyncIterator[tuple[MemoryStore, MemoryAudit]]:
+        yield stores
+
+    app = create_app(settings(toy_bundle_dir), connect=connect)  # type: ignore[arg-type]
+    async with LifespanManager(app):
+        booster = app.state.service.bundle.booster
+        config = json.loads(booster.save_config())
+
+    assert config["learner"]["generic_param"]["nthread"] == "1"

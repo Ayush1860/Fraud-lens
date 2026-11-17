@@ -103,6 +103,7 @@ def create_app(settings: Settings | None = None, *, connect: Connector = connect
         configure_logging(config.log_level)
         bundle_dir = config.bundle_dir or latest_bundle(config.models_dir)
         bundle = ModelBundle.load(bundle_dir)  # raises BundleIntegrityError: never serve it
+        bundle.booster.set_param({"nthread": config.model_threads})
         manifest_hash = manifest_sha256(bundle_dir)
         metrics = ServiceMetrics()
         metrics.model.labels(version=bundle.version).set(1)
