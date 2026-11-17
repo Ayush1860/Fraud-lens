@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 .PHONY: help setup lint format typecheck test test-data test-integration up down \
-        data features train evaluate migrate serve replay console test-web e2e load report all
+        data features train evaluate migrate serve replay console test-web e2e load report drift all
 
 help: ## List the available targets
 	@grep -E '^[a-z -]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-12s %s\n", $$1, $$2}'
@@ -81,7 +81,13 @@ test-integration: ## Service tests against real stores (start them with `make up
 	FRAUDLENS_TEST_DATABASE_URL=$(TEST_DATABASE_URL) FRAUDLENS_TEST_REDIS_URL=$(TEST_REDIS_URL) \
 	uv run pytest -m integration
 
-load report: ## Phase 6: load test and generated report
-	@echo "make $@: not implemented yet (phase 6: monitoring, load test and documents)"; exit 1
+report: ## Regenerate every number in the docs and README from committed artefacts
+	uv run python -m fraudlens.tools.report
+
+load: ## Load test at 50, 200 and 500 requests/s against a running service (`make up` first)
+	uv run --group load python -m fraudlens.tools.loadtest --label local --url http://localhost:8000
+
+drift: ## Compute the drift report once from the audit trail
+	uv run python -m fraudlens.monitoring.drift_job
 
 all: data features train evaluate report ## Rebuild data, model and report from raw files
