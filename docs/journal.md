@@ -138,8 +138,9 @@ Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
 - **Finding:** ordering the review queue by score times amount raises dollar recall at
   both budgets while catching slightly fewer frauds by count. That is the trade the plan
   predicted, now measured.
-- **Finding:** the false-positive rate is higher for women than for men, and falls with age
-  band. The model never sees gender, so the gap comes through correlated features such
+- **Finding:** the false-positive rate is higher for women than for men, peaks for ages 25-39
+  and is lowest for 70 and over. The model never sees gender, so the gap comes through
+  correlated features such
   as category and amount. It is a finding to discuss in the model card, not to hide.
 - **Finding:** the model leans on amount, 24-hour spend, category and night-time, the same
   signals the EDA showed. No identifier-like feature exists to leak, and none ranks high.
