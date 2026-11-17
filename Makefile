@@ -43,8 +43,16 @@ data: ## Download the datasets, validate them, strip PII, write data/interim/
 features: ## Build the feature tables in data/processed/
 	uv run python -m fraudlens.features.batch
 
-train evaluate: ## Phase 2: experiments, tuning, calibration, evaluation
-	@echo "make $@: not implemented yet (phase 2: modelling and experiments)"; exit 1
+DEVICE ?= cpu
+
+train: ## Imbalance study, tuning, final fit and ULB benchmark (DEVICE=cuda on a GPU)
+	uv run python -m fraudlens.training experiments --device $(DEVICE)
+	uv run python -m fraudlens.training tune --device $(DEVICE)
+	uv run python -m fraudlens.training release --device $(DEVICE)
+	uv run python -m fraudlens.training ulb --device $(DEVICE)
+
+evaluate: ## The one-time test-set evaluation of the newest bundle, then the report
+	uv run python -m fraudlens.training evaluate
 
 serve replay: ## Phase 4: scoring service and replay client
 	@echo "make $@: not implemented yet (phase 4: scoring service)"; exit 1
