@@ -8,10 +8,12 @@ Transactions are posted in time order, either at a fixed rate or at a multiple o
 time. Requests on one card are sent one after another, as an issuer would see them;
 different cards run concurrently.
 
-``--warm-days N`` first loads each card's last N days of history from the training
-partition straight into Redis, so the first replayed transactions see the same history
-the offline features did. ``--inject-drift CATEGORY=FACTOR`` multiplies amounts in one
-category from part-way through the stream, to show the drift alarm on demand.
+``--warm-days N`` first loads each card's last N days of history from the ingested
+transactions straight into Redis, so the first replayed transactions see the same history
+the offline features did. Add ``--warm-only`` to load the history and send nothing.
+
+``--inject-drift CATEGORY=FACTOR`` multiplies amounts in one category from part-way
+through the stream, to show the drift alarm on demand.
 
 Usage::
 
@@ -251,10 +253,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     pace.add_argument("--speed", type=float, default=None, help="multiple of real time")
     parser.add_argument("--concurrency", type=int, default=32)
     parser.add_argument("--warm-days", type=int, default=0)
+    parser.add_argument(
+        "--warm-only", action="store_true", help="seed card history, then exit without sending"
+    )
     parser.add_argument("--inject-drift", type=parse_drift, default=None)
     parser.add_argument("--drift-after", type=float, default=0.5, help="fraction of the stream")
     parser.add_argument("--url", type=str, default=None)
     args = parser.parse_args(argv)
+    if args.warm_only and not args.warm_days:
+        parser.error("--warm-only needs --warm-days")
 
     settings = get_settings()
     configure_logging(settings.log_level)
@@ -280,6 +287,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         cards = asyncio.run(_seed(settings.redis_url, histories))
         logger.info("history warmed", extra={"cards": cards, "days": args.warm_days})
+        if args.warm_only:
+            print(f"warmed {cards:,} cards with {args.warm_days} days of history")
+            return 0
 
     offsets = send_offsets(stream["event_ts"].to_numpy(), rate=args.rate, speed=args.speed)
 

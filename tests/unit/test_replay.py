@@ -178,3 +178,44 @@ def test_main_replays_and_reports(
     assert seeded == [1]
     assert json.loads(capsys.readouterr().out)["sent"] == 3
     assert len(log) == 3
+
+
+def test_warm_only_seeds_history_and_sends_nothing(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    for name, value in {
+        "FRAUDLENS_API_KEY": "k",
+        "FRAUDLENS_CARD_HMAC_KEY": "h",
+        "FRAUDLENS_DATABASE_URL": "postgresql+asyncpg://u:p@h/db",
+        "FRAUDLENS_REDIS_URL": "redis://h/0",
+    }.items():
+        monkeypatch.setenv(name, value)
+    replay.get_settings.cache_clear()
+    stream = pd.DataFrame([{**ROW, "transaction_id": "t0"}])
+    monkeypatch.setattr(replay, "load_stream", lambda *a, **k: stream)
+    monkeypatch.setattr(replay, "configure_logging", lambda *_: None)
+    monkeypatch.setattr(
+        replay.pd,
+        "read_parquet",
+        lambda *_: pd.DataFrame([{**ROW, "event_ts": ROW["event_ts"] - 10}]),
+    )
+    seeded: list[int] = []
+
+    async def fake_seed(url: str, histories: dict[str, Any]) -> int:
+        seeded.append(len(histories))
+        return len(histories)
+
+    monkeypatch.setattr(replay, "_seed", fake_seed)
+    monkeypatch.setattr(replay, "replay", None)  # any attempt to send would fail
+
+    code = replay.main(["--warm-days", "1", "--warm-only"])
+
+    replay.get_settings.cache_clear()
+    assert code == 0
+    assert seeded == [1]
+    assert "warmed" in capsys.readouterr().out
+
+
+def test_warm_only_needs_warm_days() -> None:
+    with pytest.raises(SystemExit):
+        replay.main(["--warm-only"])
