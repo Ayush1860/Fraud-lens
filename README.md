@@ -21,8 +21,8 @@ until it is generated from an artefact by `make report`.
 | 0 | Scaffold: tooling, settings, logging, Compose stores, CI | Done |
 | 1 | Data checks, PII handling, time splits, the single feature definition | Done |
 | 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | Done |
-| 3 | Contributions and reason codes | Golden cases awaiting review |
-| 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Planned |
+| 3 | Contributions and reason codes | Done |
+| 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Next |
 | 5 | React analyst console | Planned |
 | 6 | Monitoring, load test, documents | Planned |
 | 7 | AWS demo from Terraform | Planned |

@@ -1,0 +1,280 @@
+[
+  {
+    "transaction_id": "101d646c682a74e761bbc17ca719a48e",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount of $899.48 (53%)",
+      "5 other purchases totalling $4,041 on this card in the last 24 hours (42%)",
+      "Online shopping purchase at night, in the 22:00 hour (UTC) (1%)",
+      "First purchase at this merchant in 30 days (1%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "f5001cff9193802f5e3a6112c9ae9196",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount is 20.9 times this card's 30-day average of $46 (55%)",
+      "2 other purchases totalling $877 on this card in the last 24 hours (23%)",
+      "First purchase at this merchant in 30 days (8%)",
+      "In-store miscellaneous purchase at night, in the 00:00 hour (UTC) (8%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "9bdf8a27d0c15582c1f2861d0017ddcd",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount is 3.2 times this card's 30-day average of $280 (47%)",
+      "7 other purchases totalling $4,614 on this card in the last 24 hours (44%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "927dc517775e86a1dc7430064d52c1a5",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount is 10.3 times this card's 30-day average of $83 (55%)",
+      "2 other purchases totalling $2,050 on this card in the last 24 hours (35%)",
+      "Online shopping purchase at night, in the 22:00 hour (UTC) (7%)",
+      "First purchase at this merchant in 30 days (1%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "a392d97cc44e10a5fbc2f5154bd1fe48",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount of $931.58 (55%)",
+      "5 other purchases totalling $3,172 on this card in the last 24 hours (43%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "00d95d05d4942c5f851d63fadf8150d9",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount is 12.2 times this card's 30-day average of $83 (96%)",
+      "First purchase at this merchant in 30 days (4%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "e98074c0c55669fc5af8cbb614b55425",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount of $7.67 (79%)",
+      "In-store miscellaneous purchase at night, in the 00:00 hour (UTC) (18%)",
+      "129 km from the previous purchase 7 minutes earlier (3%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "0acbb73bd48d379e1b0c3170525f1587",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount is 9.7 times this card's 30-day average of $66 (100%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "bf2544659d44fd7b91d25e4c19b8d3fa",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons_when_approved": [
+      "Amount is 12.5 times this card's 30-day average of $66 (96%)",
+      "First purchase at this merchant in 30 days (4%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "ecd0360008de77dbbd7dc5dff789da1c",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R02_VELOCITY"
+    ],
+    "reasons_when_approved": [
+      "8 other purchases totalling $4,728 on this card in the last 24 hours (47%)",
+      "Fuel and transport purchase at night, in the 03:00 hour (UTC) (42%)",
+      "Amount of $20.83 (12%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "57d0bdcd5a9b555c0ea42be62829ba8f",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R02_VELOCITY"
+    ],
+    "reasons_when_approved": [
+      "5 other purchases totalling $2,491 on this card in the last 24 hours (61%)",
+      "Dining purchase at night, in the 23:00 hour (UTC) (22%)",
+      "Amount of $137.44 (6%)",
+      "102 km from the previous purchase 3 minutes earlier (1%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "953a1fe715cc3211d728b0fbb59d735d",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R02_VELOCITY"
+    ],
+    "reasons_when_approved": [
+      "4 other purchases totalling $1,325 on this card in the last 24 hours (91%)",
+      "First purchase at this merchant in 30 days (8%)",
+      "171 km from the previous purchase 628 minutes earlier (1%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "1ddb9128b9eafd001ee5902a2cf05d18",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R02_VELOCITY"
+    ],
+    "reasons_when_approved": [
+      "4 other purchases totalling $1,283 on this card in the last 24 hours (87%)",
+      "First purchase at this merchant in 30 days (1%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "f6dff453ba3a01260026b2bedf6e797f",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R02_VELOCITY"
+    ],
+    "reasons_when_approved": [
+      "3 other purchases totalling $937 on this card in the last 24 hours (76%)",
+      "First purchase at this merchant in 30 days (24%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "fd134279778f18f027718135cd0aaabc",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R03_TRAVEL"
+    ],
+    "reasons_when_approved": [
+      "48 km from the previous purchase 1,107 minutes earlier (59%)",
+      "First purchase at this merchant in 30 days (30%)",
+      "Travel purchase at night, in the 23:00 hour (UTC) (11%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "f2bb39e3c1a726ea3dc92502255865dd",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R04_NOVELTY"
+    ],
+    "reasons_when_approved": [
+      "First purchase at this merchant in 30 days (28%)",
+      "4 other purchases totalling $348 on this card in the last 24 hours (21%)",
+      "56 km from the previous purchase 564 minutes earlier (4%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "8733a8bfde7c45fe0c03666bfa3470f4",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R05_TIME_AND_CATEGORY"
+    ],
+    "reasons_when_approved": [
+      "Fuel and transport purchase at night, in the 03:00 hour (UTC) (47%)",
+      "Amount of $10.69 (27%)",
+      "6 other purchases totalling $2,476 on this card in the last 24 hours (25%)",
+      "First purchase at this merchant in 30 days (0%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "7ac972ff72680fb939f3c700d2634a20",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R05_TIME_AND_CATEGORY"
+    ],
+    "reasons_when_approved": [
+      "In-store grocery purchase at night, in the 02:00 hour (UTC) (51%)",
+      "Amount is 7.0 times this card's 30-day average of $47 (47%)",
+      "First purchase at this merchant in 30 days (2%)",
+      "99 km from the previous purchase 401 minutes earlier (0%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "494b43ece8423d54544b2b5edf161d83",
+    "is_fraud": 1,
+    "expected_leading_reason_ids": [
+      "R05_TIME_AND_CATEGORY"
+    ],
+    "reasons_when_approved": [
+      "Dining purchase at night, in the 02:00 hour (UTC) (49%)",
+      "3 other purchases totalling $1,169 on this card in the last 24 hours (35%)",
+      "Amount of $118.22 (4%)",
+      "First purchase at this merchant in 30 days (2%)",
+      "45 km from the previous purchase 90 minutes earlier (0%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  },
+  {
+    "transaction_id": "e9acedf827fe668e5ba177e4b34d4876",
+    "is_fraud": 0,
+    "expected_leading_reason_ids": [
+      "R05_TIME_AND_CATEGORY"
+    ],
+    "reasons_when_approved": [
+      "Home purchase at night, in the 23:00 hour (UTC) (99%)"
+    ],
+    "approved": "2026-11-17",
+    "approved_with_bundle": "2026-11-17.1"
+  }
+]

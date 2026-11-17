@@ -1,6 +1,6 @@
-# Golden cases — proposed, awaiting review
+# Golden cases — approved 2026-11-17
 
-Flagged transactions from the late validation slice, scored by bundle `2026-11-17.1`. For each row, decide whether the reasons are the ones you would expect for that transaction. Approved rows are frozen with their leading reason ids.
+Flagged transactions from the late validation slice, scored by bundle `2026-11-17.1`. All 20 rows were reviewed and approved on 2026-11-17. Their leading reason ids are frozen in `tests/model/golden_cases.json`, and a test holds every future model to them.
 
 | # | Fraud? | Amount | Category | Score | Decision | Reasons (share of upward push) | Mitigating |
 | --- | --- | --- | --- | --- | --- | --- | --- |

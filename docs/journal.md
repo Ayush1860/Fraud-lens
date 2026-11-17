@@ -168,3 +168,7 @@ Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
 - **Decision:** the time-and-category template states the UTC hour and the category, not
   "outside this card's usual hours" as the plan's example does. The model has no feature
   for a card's usual hours, so that wording would claim something the model never saw.
+- **Review:** all 20 proposed golden cases were reviewed and approved on 2026-11-17. Their
+  leading reason ids are frozen in `tests/model/golden_cases.json`. Nine lead with the
+  amount group, five with purchase pace, four with time and category, and one each with
+  travel and novelty.
