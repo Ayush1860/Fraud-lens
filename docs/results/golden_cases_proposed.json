@@ -1,0 +1,378 @@
+[
+  {
+    "transaction_id": "101d646c682a74e761bbc17ca719a48e",
+    "is_fraud": 1,
+    "amount": 899.48,
+    "category": "shopping_net",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R02_VELOCITY",
+      "R05_TIME_AND_CATEGORY",
+      "R04_NOVELTY"
+    ],
+    "reasons": [
+      "Amount of $899.48 (53%)",
+      "5 other purchases totalling $4,041 on this card in the last 24 hours (42%)",
+      "Online shopping purchase at night, in the 22:00 hour (UTC) (1%)",
+      "First purchase at this merchant in 30 days (1%)"
+    ],
+    "mitigating": "8 km from the previous purchase 316 minutes earlier"
+  },
+  {
+    "transaction_id": "f5001cff9193802f5e3a6112c9ae9196",
+    "is_fraud": 1,
+    "amount": 971.57,
+    "category": "misc_pos",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R02_VELOCITY",
+      "R04_NOVELTY",
+      "R05_TIME_AND_CATEGORY"
+    ],
+    "reasons": [
+      "Amount is 20.9 times this card's 30-day average of $46 (55%)",
+      "2 other purchases totalling $877 on this card in the last 24 hours (23%)",
+      "First purchase at this merchant in 30 days (8%)",
+      "In-store miscellaneous purchase at night, in the 00:00 hour (UTC) (8%)"
+    ],
+    "mitigating": "94 km from the previous purchase 12 minutes earlier"
+  },
+  {
+    "transaction_id": "9bdf8a27d0c15582c1f2861d0017ddcd",
+    "is_fraud": 1,
+    "amount": 897.71,
+    "category": "shopping_net",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R02_VELOCITY"
+    ],
+    "reasons": [
+      "Amount is 3.2 times this card's 30-day average of $280 (47%)",
+      "7 other purchases totalling $4,614 on this card in the last 24 hours (44%)"
+    ],
+    "mitigating": "Online shopping purchase at night, in the 22:00 hour (UTC)"
+  },
+  {
+    "transaction_id": "927dc517775e86a1dc7430064d52c1a5",
+    "is_fraud": 1,
+    "amount": 855.4,
+    "category": "shopping_net",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R02_VELOCITY",
+      "R05_TIME_AND_CATEGORY",
+      "R04_NOVELTY"
+    ],
+    "reasons": [
+      "Amount is 10.3 times this card's 30-day average of $83 (55%)",
+      "2 other purchases totalling $2,050 on this card in the last 24 hours (35%)",
+      "Online shopping purchase at night, in the 22:00 hour (UTC) (7%)",
+      "First purchase at this merchant in 30 days (1%)"
+    ],
+    "mitigating": "99 km from the previous purchase 1,337 minutes earlier"
+  },
+  {
+    "transaction_id": "a392d97cc44e10a5fbc2f5154bd1fe48",
+    "is_fraud": 1,
+    "amount": 931.58,
+    "category": "shopping_pos",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R02_VELOCITY"
+    ],
+    "reasons": [
+      "Amount of $931.58 (55%)",
+      "5 other purchases totalling $3,172 on this card in the last 24 hours (43%)"
+    ],
+    "mitigating": "138 km from the previous purchase 513 minutes earlier"
+  },
+  {
+    "transaction_id": "00d95d05d4942c5f851d63fadf8150d9",
+    "is_fraud": 1,
+    "amount": 1006.81,
+    "category": "shopping_net",
+    "score": 0.7608695652173914,
+    "decision": "review",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R04_NOVELTY"
+    ],
+    "reasons": [
+      "Amount is 12.2 times this card's 30-day average of $83 (96%)",
+      "First purchase at this merchant in 30 days (4%)"
+    ],
+    "mitigating": "Online shopping purchase in the 18:00 hour (UTC)"
+  },
+  {
+    "transaction_id": "e98074c0c55669fc5af8cbb614b55425",
+    "is_fraud": 0,
+    "amount": 7.67,
+    "category": "misc_pos",
+    "score": 0.02,
+    "decision": "review",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R05_TIME_AND_CATEGORY",
+      "R03_TRAVEL"
+    ],
+    "reasons": [
+      "Amount of $7.67 (79%)",
+      "In-store miscellaneous purchase at night, in the 00:00 hour (UTC) (18%)",
+      "129 km from the previous purchase 7 minutes earlier (3%)"
+    ],
+    "mitigating": "4 other purchases totalling $321 on this card in the last 24 hours"
+  },
+  {
+    "transaction_id": "0acbb73bd48d379e1b0c3170525f1587",
+    "is_fraud": 0,
+    "amount": 642.86,
+    "category": "shopping_pos",
+    "score": 0.02,
+    "decision": "review",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons": [
+      "Amount is 9.7 times this card's 30-day average of $66 (100%)"
+    ],
+    "mitigating": "In-store shopping purchase in the 13:00 hour (UTC)"
+  },
+  {
+    "transaction_id": "bf2544659d44fd7b91d25e4c19b8d3fa",
+    "is_fraud": 0,
+    "amount": 823.16,
+    "category": "shopping_net",
+    "score": 0.02,
+    "decision": "review",
+    "reason_ids": [
+      "R01_AMOUNT_VS_PATTERN",
+      "R04_NOVELTY"
+    ],
+    "reasons": [
+      "Amount is 12.5 times this card's 30-day average of $66 (96%)",
+      "First purchase at this merchant in 30 days (4%)"
+    ],
+    "mitigating": "Online shopping purchase at night, in the 04:00 hour (UTC)"
+  },
+  {
+    "transaction_id": "ecd0360008de77dbbd7dc5dff789da1c",
+    "is_fraud": 1,
+    "amount": 20.83,
+    "category": "gas_transport",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R02_VELOCITY",
+      "R05_TIME_AND_CATEGORY",
+      "R01_AMOUNT_VS_PATTERN"
+    ],
+    "reasons": [
+      "8 other purchases totalling $4,728 on this card in the last 24 hours (47%)",
+      "Fuel and transport purchase at night, in the 03:00 hour (UTC) (42%)",
+      "Amount of $20.83 (12%)"
+    ],
+    "mitigating": "50 km from the previous purchase 61 minutes earlier"
+  },
+  {
+    "transaction_id": "57d0bdcd5a9b555c0ea42be62829ba8f",
+    "is_fraud": 1,
+    "amount": 137.44,
+    "category": "food_dining",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R02_VELOCITY",
+      "R05_TIME_AND_CATEGORY",
+      "R01_AMOUNT_VS_PATTERN",
+      "R03_TRAVEL"
+    ],
+    "reasons": [
+      "5 other purchases totalling $2,491 on this card in the last 24 hours (61%)",
+      "Dining purchase at night, in the 23:00 hour (UTC) (22%)",
+      "Amount of $137.44 (6%)",
+      "102 km from the previous purchase 3 minutes earlier (1%)"
+    ],
+    "mitigating": "First purchase at this merchant in 30 days"
+  },
+  {
+    "transaction_id": "953a1fe715cc3211d728b0fbb59d735d",
+    "is_fraud": 0,
+    "amount": 48.69,
+    "category": "personal_care",
+    "score": 0.04672897196261682,
+    "decision": "review",
+    "reason_ids": [
+      "R02_VELOCITY",
+      "R04_NOVELTY",
+      "R03_TRAVEL"
+    ],
+    "reasons": [
+      "4 other purchases totalling $1,325 on this card in the last 24 hours (91%)",
+      "First purchase at this merchant in 30 days (8%)",
+      "171 km from the previous purchase 628 minutes earlier (1%)"
+    ],
+    "mitigating": "Personal care purchase in the 14:00 hour (UTC)"
+  },
+  {
+    "transaction_id": "1ddb9128b9eafd001ee5902a2cf05d18",
+    "is_fraud": 0,
+    "amount": 39.68,
+    "category": "personal_care",
+    "score": 0.02,
+    "decision": "review",
+    "reason_ids": [
+      "R02_VELOCITY",
+      "R04_NOVELTY"
+    ],
+    "reasons": [
+      "4 other purchases totalling $1,283 on this card in the last 24 hours (87%)",
+      "First purchase at this merchant in 30 days (1%)"
+    ],
+    "mitigating": "Amount of $39.68"
+  },
+  {
+    "transaction_id": "f6dff453ba3a01260026b2bedf6e797f",
+    "is_fraud": 0,
+    "amount": 50.4,
+    "category": "home",
+    "score": 0.02,
+    "decision": "review",
+    "reason_ids": [
+      "R02_VELOCITY",
+      "R04_NOVELTY"
+    ],
+    "reasons": [
+      "3 other purchases totalling $937 on this card in the last 24 hours (76%)",
+      "First purchase at this merchant in 30 days (24%)"
+    ],
+    "mitigating": "Amount of $50.40"
+  },
+  {
+    "transaction_id": "fd134279778f18f027718135cd0aaabc",
+    "is_fraud": 0,
+    "amount": 7.01,
+    "category": "travel",
+    "score": 0.02,
+    "decision": "review",
+    "reason_ids": [
+      "R03_TRAVEL",
+      "R04_NOVELTY",
+      "R05_TIME_AND_CATEGORY"
+    ],
+    "reasons": [
+      "48 km from the previous purchase 1,107 minutes earlier (59%)",
+      "First purchase at this merchant in 30 days (30%)",
+      "Travel purchase at night, in the 23:00 hour (UTC) (11%)"
+    ],
+    "mitigating": "3 other purchases totalling $132 on this card in the last 24 hours"
+  },
+  {
+    "transaction_id": "f2bb39e3c1a726ea3dc92502255865dd",
+    "is_fraud": 0,
+    "amount": 49.41,
+    "category": "personal_care",
+    "score": 0.04672897196261682,
+    "decision": "review",
+    "reason_ids": [
+      "R04_NOVELTY",
+      "R02_VELOCITY",
+      "R03_TRAVEL"
+    ],
+    "reasons": [
+      "First purchase at this merchant in 30 days (28%)",
+      "4 other purchases totalling $348 on this card in the last 24 hours (21%)",
+      "56 km from the previous purchase 564 minutes earlier (4%)"
+    ],
+    "mitigating": "Personal care purchase in the 18:00 hour (UTC)"
+  },
+  {
+    "transaction_id": "8733a8bfde7c45fe0c03666bfa3470f4",
+    "is_fraud": 1,
+    "amount": 10.69,
+    "category": "gas_transport",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R05_TIME_AND_CATEGORY",
+      "R01_AMOUNT_VS_PATTERN",
+      "R02_VELOCITY",
+      "R04_NOVELTY"
+    ],
+    "reasons": [
+      "Fuel and transport purchase at night, in the 03:00 hour (UTC) (47%)",
+      "Amount of $10.69 (27%)",
+      "6 other purchases totalling $2,476 on this card in the last 24 hours (25%)",
+      "First purchase at this merchant in 30 days (0%)"
+    ],
+    "mitigating": "175 km from the previous purchase 162 minutes earlier"
+  },
+  {
+    "transaction_id": "7ac972ff72680fb939f3c700d2634a20",
+    "is_fraud": 1,
+    "amount": 331.74,
+    "category": "grocery_pos",
+    "score": 1.0,
+    "decision": "block",
+    "reason_ids": [
+      "R05_TIME_AND_CATEGORY",
+      "R01_AMOUNT_VS_PATTERN",
+      "R04_NOVELTY",
+      "R03_TRAVEL"
+    ],
+    "reasons": [
+      "In-store grocery purchase at night, in the 02:00 hour (UTC) (51%)",
+      "Amount is 7.0 times this card's 30-day average of $47 (47%)",
+      "First purchase at this merchant in 30 days (2%)",
+      "99 km from the previous purchase 401 minutes earlier (0%)"
+    ],
+    "mitigating": "2 other purchases totalling $140 on this card in the last 24 hours"
+  },
+  {
+    "transaction_id": "494b43ece8423d54544b2b5edf161d83",
+    "is_fraud": 1,
+    "amount": 118.22,
+    "category": "food_dining",
+    "score": 0.956989247311828,
+    "decision": "block",
+    "reason_ids": [
+      "R05_TIME_AND_CATEGORY",
+      "R02_VELOCITY",
+      "R01_AMOUNT_VS_PATTERN",
+      "R04_NOVELTY",
+      "R03_TRAVEL"
+    ],
+    "reasons": [
+      "Dining purchase at night, in the 02:00 hour (UTC) (49%)",
+      "3 other purchases totalling $1,169 on this card in the last 24 hours (35%)",
+      "Amount of $118.22 (4%)",
+      "First purchase at this merchant in 30 days (2%)",
+      "45 km from the previous purchase 90 minutes earlier (0%)"
+    ],
+    "mitigating": null
+  },
+  {
+    "transaction_id": "e9acedf827fe668e5ba177e4b34d4876",
+    "is_fraud": 0,
+    "amount": 215.11,
+    "category": "home",
+    "score": 0.02,
+    "decision": "review",
+    "reason_ids": [
+      "R05_TIME_AND_CATEGORY"
+    ],
+    "reasons": [
+      "Home purchase at night, in the 23:00 hour (UTC) (99%)"
+    ],
+    "mitigating": "4 other purchases totalling $423 on this card in the last 24 hours"
+  }
+]

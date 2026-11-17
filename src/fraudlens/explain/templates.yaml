@@ -1,0 +1,72 @@
+# Reason-code groups and their wording.
+#
+# Every model feature belongs to exactly one group. Correlated features share a group, and
+# the group's contribution is the sum of theirs, which keeps reasons stable when SHAP splits
+# credit differently among correlated features. A group's id is stable and is stored in the
+# audit row; its wording may change without changing the id.
+#
+# Each template is filled with the transaction's own values. The model ranks the groups;
+# the template supplies the words. Which variant is used is decided in reason_codes.py.
+
+groups:
+  R01_AMOUNT_VS_PATTERN:
+    title: Amount against this card's pattern
+    features: [amount, log_amount, amt_mean_30d, amt_std_30d, amt_max_30d, amt_ratio_30d, amt_zscore_30d]
+    templates:
+      ratio: "Amount is {ratio:.1f} times this card's 30-day average of ${average:,.0f}"
+      no_history: "Amount of ${amount:,.2f} on a card with no purchases in the last 30 days"
+      plain: "Amount of ${amount:,.2f}"
+
+  R02_VELOCITY:
+    title: Purchase pace on this card
+    features: [txn_count_1h, txn_count_24h, txn_count_7d, amt_sum_24h, secs_since_prev]
+    templates:
+      hour: "{count} other purchases on this card in the last hour"
+      day: "{count} other purchases totalling ${total:,.0f} on this card in the last 24 hours"
+      recent: "Previous purchase on this card {minutes:,.0f} minutes earlier"
+      week: "{count} other purchases on this card in the last 7 days"
+
+  R03_TRAVEL:
+    title: Distance and travel
+    features: [dist_home_km, dist_prev_km, speed_prev_kmh]
+    templates:
+      previous: "{distance:,.0f} km from the previous purchase {minutes:,.0f} minutes earlier"
+      home: "{distance:,.0f} km from the cardholder's home"
+
+  R04_NOVELTY:
+    title: New merchant or category
+    features: [is_new_merchant_30d, is_new_category_30d, n_merchants_24h, n_categories_24h]
+    templates:
+      new_merchant: "First purchase at this merchant in 30 days"
+      new_category: "First {category} purchase on this card in 30 days"
+      spread: "{merchants} different merchants on this card in the last 24 hours"
+
+  R05_TIME_AND_CATEGORY:
+    title: Time of day and category
+    features: [category, hour, day_of_week, is_night, is_weekend]
+    templates:
+      night: "{category} purchase at night, in the {hour:02d}:00 hour (UTC)"
+      day: "{category} purchase in the {hour:02d}:00 hour (UTC)"
+
+  R06_CARDHOLDER_CONTEXT:
+    title: Cardholder context
+    features: [cardholder_age, log_city_pop, n_prior_30d]
+    # Context lets the model discount thin histories. It is never shown as a reason.
+    templates: {}
+
+category_labels:
+  entertainment: Entertainment
+  food_dining: Dining
+  gas_transport: Fuel and transport
+  grocery_net: Online grocery
+  grocery_pos: In-store grocery
+  health_fitness: Health and fitness
+  home: Home
+  kids_pets: Kids and pets
+  misc_net: Online miscellaneous
+  misc_pos: In-store miscellaneous
+  personal_care: Personal care
+  shopping_net: Online shopping
+  shopping_pos: In-store shopping
+  travel: Travel
+  unknown: Uncategorised

@@ -144,3 +144,31 @@ Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
   as category and amount. It is a finding to discuss in the model card, not to hide.
 - **Finding:** the model leans on amount, 24-hour spend, category and night-time, the same
   signals the EDA showed. No identifier-like feature exists to leak, and none ranks high.
+
+## 2026-11-17 — Phase 3 explainability
+
+- **Surprise:** the plan's "library agreement" check, comparing XGBoost's contributions with
+  `shap.TreeExplainer(feature_perturbation="tree_path_dependent")`, cannot fail. For an
+  XGBoost model in that mode, shap calls `Booster.predict(pred_contribs=True)` itself; the
+  two agreed to exactly 0.0, which is what gave it away. Shap's own implementation cannot
+  read XGBoost's categorical splits at all.
+- **Decision:** the independent check is a brute-force Shapley calculation written from
+  scratch in `tests/model/shapley_oracle.py`. It walks the trees from the model's JSON dump,
+  evaluates each tree's path-dependent expectation for every subset of the features the
+  tree uses, and applies the Shapley formula. It is exponential in features per tree, so
+  it runs on a small depth-3 model with categorical splits. It catches the mistakes the
+  plan wanted caught: column order and category encoding.
+- **Bug (in the oracle):** its first margins disagreed with XGBoost by up to 0.3. The
+  categorical direction was right; the difference was precision. XGBoost compares feature
+  values as 32-bit floats, so a value just below a threshold in 64 bits can round onto it.
+  Comparing in 32 bits brought agreement to about 2e-7.
+- **Decision:** reasons are grouped into six groups with stable ids. The cardholder-context
+  group (age, city population, history length) is computed but never worded, because it
+  says nothing an analyst can act on.
+- **Decision:** the time-and-category template states the UTC hour and the category, not
+  "outside this card's usual hours" as the plan's example does. The model has no feature
+  for a card's usual hours, so that wording would claim something the model never saw.
+- **Review:** all 20 proposed golden cases were reviewed and approved on 2026-11-17. Their
+  leading reason ids are frozen in `tests/model/golden_cases.json`. Nine lead with the
+  amount group, five with purchase pace, four with time and category, and one each with
+  travel and novelty.

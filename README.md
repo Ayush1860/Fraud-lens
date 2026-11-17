@@ -21,8 +21,8 @@ until it is generated from an artefact by `make report`.
 | 0 | Scaffold: tooling, settings, logging, Compose stores, CI | Done |
 | 1 | Data checks, PII handling, time splits, the single feature definition | Done |
 | 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | Done |
-| 3 | Contributions and reason codes | Next |
-| 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Planned |
+| 3 | Contributions and reason codes | Done |
+| 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Next |
 | 5 | React analyst console | Planned |
 | 6 | Monitoring, load test, documents | Planned |
 | 7 | AWS demo from Terraform | Planned |
@@ -134,6 +134,27 @@ training. A parity test fails on any row where the two disagree.
 - **Final test.** `fraudlens.training.evaluate.final_test` is the only reader of the test
   partition and refuses to score a bundle twice. It adds a fairness check of
   false-positive rates by gender and age band; the model never sees gender.
+
+## Explanations
+
+Every flagged transaction gets up to five reason codes in plain language, worded with its
+own values: for example "Amount is 20.9 times this card's 30-day average of $46".
+
+- **Contributions** are XGBoost's own exact TreeSHAP values
+  (`Booster.predict(pred_contribs=True)`), in log-odds, plus a bias column; each row sums
+  to the model's margin. The `shap` library is never imported by the service.
+- **Groups.** Correlated features are summed into six groups with stable ids
+  (`R01_AMOUNT_VS_PATTERN` to `R06_CARDHOLDER_CONTEXT`), defined with their wording in
+  `src/fraudlens/explain/templates.yaml`. The cardholder-context group is never shown.
+- **Share** is each reason's part of the total upward push. Contributions are log-odds,
+  so they do not add up in probability units.
+- **Independent check.** For XGBoost models, `shap.TreeExplainer` hands path-dependent
+  SHAP straight back to XGBoost, so comparing the two would test XGBoost against itself.
+  The tests instead compare against a brute-force Shapley calculation written from
+  scratch over the dumped trees, including the categorical splits.
+- `python -m fraudlens.explain.checks --bundle models/<version>` writes additivity,
+  stability, global ranking and monthly explanation drift to
+  `docs/results/explainability.json`. `notebooks/02_shap_global.ipynb` plots them.
 
 ## Configuration
 
