@@ -84,6 +84,34 @@ is no record of why money moved or did not, which a bank cannot accept.
   `pred_contribs` block the loop while they run. Inline against a thread pool is
   measured in phase 6 with the load test, and the faster one is kept.
 
+## Drift monitoring
+
+The service recomputes a drift report every minute in the background, from the newest
+10,000 decisions in the audit trail, and serves the latest one in
+`/v1/monitoring/summary` and as Prometheus gauges. Code: `src/fraudlens/monitoring/`.
+
+| Comparison | Baseline | Why |
+| --- | --- | --- |
+| Each feature | The bundle's training histograms | The plan's feature drift: has traffic moved away from what the model learned? |
+| Amount within each category | The previous 10,000 decisions | A shift confined to one category is invisible overall |
+| Decision mix | The validation slice's shares | Replaces score PSI, whose reference is degenerate |
+
+Choices, and the evidence behind them (measured on validation rows, not the test file):
+
+- **Why per category.** Amounts in shopping_net multiplied by 1.5 move the overall amount
+  PSI from about 0.004 to at most 0.016; shopping_net is 7.5% of traffic. Within the
+  category the same shift measured 0.34, while 11 pairs of clean windows never exceeded
+  0.12. The alarm level of 0.25 separates them.
+- **Why the previous window for segments.** The bundle stores no per-category reference.
+  Comparing consecutive windows catches sudden shifts; a slow drift spread over many
+  windows would pass. A release that stores per-category histograms would fix that.
+- **Calendar features never alarm.** Day of week measured a PSI of 2.09 on clean data:
+  10,000 decisions cover about a day, which can never match a weekly histogram.
+- **Small segments are not judged.** A category needs 200 rows in each window; below that,
+  sampling noise alone can reach the watch level.
+- **Score PSI is not used.** About 99% of validation scores are near 0, so the bundle's
+  decile edges collapse to one and the histogram compares nothing.
+
 ## The console's access to the API
 
 The console calls `/api` on its own origin. nginx forwards those calls to the service and

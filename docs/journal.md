@@ -219,3 +219,30 @@ Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
 - **Check:** with the released bundle served locally, a verdict recorded in the browser was
   read back from Postgres, and the Playwright smoke test passed against the local stack in
   Edge. CI runs the same test in Chromium against the Docker Compose stack.
+
+## 2026-11-18 — Phase 6 monitoring, load test and documents
+
+- **Finding:** the plan's drift demonstration, shopping_net amounts times 1.5, moves the
+  overall amount PSI from 0.004 to at most 0.016, far below any alarm. Within the category
+  the same shift measured 0.34, against at most 0.12 for clean window pairs. The drift
+  report therefore compares amount within each category, newest window against the one
+  before. Measured on validation rows; the test file stays unread.
+- **Finding:** day of week shows a PSI of 2.09 with no drift at all, because 10,000
+  decisions cover about a day. Calendar features are reported but never alarm. This is the
+  clearest example of where PSI misleads: a window shorter than the feature's cycle.
+- **Decision:** score drift is measured as the decision mix against the validation mix.
+  The bundle's score histogram is degenerate (about 99% of validation scores are near 0, so
+  the decile edges collapse), and the release cannot be changed after the fact.
+- **Bug (found while looking at the alarm in the console):** categories too small to judge
+  sorted to the top of the segment table, because a missing PSI was keyed as -1.
+- **Surprise:** after a restart with an empty Redis, history features alarm loudly
+  (`n_prior_30d` measured 8.3): every card looks new. It is a real signal, written into the
+  runbook, and the replay client gained `--warm-only` to refill history without traffic.
+- **Decision:** load tests run on a GitHub Actions runner, against the Compose stack, with
+  a model of the released model's size (398 trees, depth 6) trained on synthetic data. The
+  released bundle is not in the repository, and timing depends on tree count and depth,
+  not on the data. A release keeps only the trees up to its best validation round, so the
+  load-test bundle is refitted at full size with the same calibration and threshold code.
+- **Decision:** `make report` copies the release's result documents into
+  `docs/results/release/`, then writes the README block, the model card and the validation
+  report from committed files only. A test regenerates them and fails on any difference.
