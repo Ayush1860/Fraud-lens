@@ -27,10 +27,13 @@ COPY alembic.ini ./
 COPY migrations ./migrations
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    FRAUDLENS_MODELS_DIR=/app/models
+    FRAUDLENS_MODELS_DIR=/app/models \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/fraudlens-metrics
 USER fraudlens
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=6 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=2)"]
 # Migrations are idempotent; running them first means a fresh database just works.
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn fraudlens.service.app:create_app --factory --host 0.0.0.0 --port 8000 --no-access-log --workers ${FRAUDLENS_WORKERS:-1}"]
+# Metric files from a previous run of this container are cleared, so /metrics counts
+# only the workers that are alive now.
+CMD ["sh", "-c", "mkdir -p \"$PROMETHEUS_MULTIPROC_DIR\" && find \"$PROMETHEUS_MULTIPROC_DIR\" -type f -delete && alembic upgrade head && exec uvicorn fraudlens.service.app:create_app --factory --host 0.0.0.0 --port 8000 --no-access-log --workers ${FRAUDLENS_WORKERS:-1}"]
