@@ -388,3 +388,41 @@ figcaption {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.drift caption {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+}
+
+.drift .table {
+  margin-bottom: 1rem;
+}
+
+.alarm {
+  border: 2px solid var(--risk);
+  background: var(--risk-soft);
+  color: var(--risk);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.drift-stable {
+  color: var(--safe);
+  background: var(--safe-soft);
+}
+
+.drift-watch {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.drift-alarm {
+  color: var(--risk);
+  background: var(--risk-soft);
+}
+
+.drift-unknown {
+  color: var(--muted);
+  background: var(--page);
+}

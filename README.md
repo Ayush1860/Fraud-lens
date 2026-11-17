@@ -11,10 +11,44 @@ response leaves.
 > **Simulated data.** The primary dataset (Sparkov) is generated, not real card traffic.
 > Scores on it demonstrate method and engineering, not real-world accuracy.
 
+## How it fits together
+
+A live transaction, left to right. The service is the only component that decides, and
+it writes the audit row before it answers.
+
+```mermaid
+flowchart LR
+    caller[Card network or replay client] -->|POST /v1/transactions/score| api[Scoring service]
+    api -->|claim id, lock card, read history| redis[(Redis: card history)]
+    api --> features[compute_features] --> model[XGBoost + calibrator + thresholds]
+    model -->|review or block only| reasons[Contributions and reason codes]
+    api -->|insert decision and alert| pg[(Postgres: append-only audit)]
+    api -->|append transaction| redis
+    console[Analyst console] -->|/api via nginx| api
+    pg -->|alerts, labels, drift report| console
+```
+
+A model release, top to bottom. Analyst labels in Postgres are what a future retrain
+would learn from.
+
+```mermaid
+flowchart TB
+    raw[Raw Sparkov files, SHA-256 pinned] --> ingest[Validate, strip PII, tokenise cards]
+    ingest --> batch[Batch features: same definition as serving]
+    batch --> split[Time-ordered split with a gap]
+    split --> study[Imbalance study, Optuna tuning]
+    study --> release[Fit, calibrate, choose thresholds by cost]
+    release --> bundle[Versioned bundle with SHA-256 manifest]
+    bundle --> test[One-time test evaluation]
+    bundle -->|verified at start-up| service[Scoring service]
+    test --> report[make report: README, model card, validation report]
+```
+
 ## Status
 
-The project is built in phases, one pull request each. No metric appears in this README
-until it is generated from an artefact by `make report`.
+The project is built in phases, one pull request each. Every metric in this README is
+generated from a committed artefact by `make report`, and a test fails if one is edited
+by hand.
 
 | Phase | Scope | State |
 | --- | --- | --- |
@@ -29,7 +63,27 @@ until it is generated from an artefact by `make report`.
 
 ## Results
 
-The model report, with the imbalance study, the one-time test evaluation, a fairness
+<!-- report:start -->
+Release `2026-11-17.1`, scored once on the public test file: 555,719 transactions over 194 days, 2,145 frauds. Intervals are 95% day-block bootstrap intervals. Simulated data: these numbers show method, not real-world accuracy.
+
+| Measure | Test result |
+| --- | --- |
+| Average precision | 0.974 [0.967, 0.980] |
+| Frauds caught when 1% of traffic is reviewed | 0.944 [0.918, 0.965] |
+| Fraud dollars caught at the same budget | 0.966 [0.947, 0.982] |
+| Precision of those alerts | 0.358 [0.319, 0.402] |
+| Expected cost per 1,000 transactions | $27.68, against $2,039.38 for approving everything |
+| Explanations | contributions add up to the margin within 2.5e-05 log-odds on 10,000 rows; top three reasons unchanged by a 1% amount change for 97.8% of 1,000 flagged rows |
+| Latency, 50 requests/s offered | 49 served; p50 22 ms, p95 200 ms, p99 450 ms |
+| Latency, 200 requests/s offered | 197 served; p50 36 ms, p95 170 ms, p99 330 ms |
+| Latency, 500 requests/s offered | 420 served; p50 190 ms, p95 370 ms, p99 520 ms |
+
+Latency: uvicorn, 3 worker(s), in Docker, `workers-3-762bbef`, on a GitHub Actions runner (AMD EPYC 9V74 80-Core Processor, 4 CPUs) with Postgres, Redis and the load generator on the same machine. Every configuration measured, before and after the fix, is compared in [docs/perf](docs/perf/README.md).
+<!-- report:end -->
+
+The model card ([docs/model_card.md](docs/model_card.md)) and the validation report
+([docs/validation_report.md](docs/validation_report.md)) are generated the same way. The
+model report, with the imbalance study, the one-time test evaluation, a fairness
 check and the ULB benchmark, is generated from training artefacts:
 [docs/results/report.md](docs/results/report.md). Every number in it comes from a JSON
 file beside it; none is typed by hand.
@@ -84,7 +138,8 @@ copy a released bundle there. Without one the service refuses to start.
 `make serve` runs the service outside Docker instead.
 
 Other targets: `make lint`, `make typecheck`, `make format`, `make down`, `make help`.
-The remaining targets (`load`, `report`) are stubs that fail with the phase they arrive in.
+`make report` regenerates every number in the documents from committed artefacts;
+`make load` runs the load test against a running service.
 
 Without Make, run the underlying commands directly, for example `uv sync --locked`,
 `uv run python -m fraudlens.data.download` and
@@ -232,6 +287,21 @@ transaction flagged, and was the model right?
   server) forwards it to the service and adds the API key, so the browser never holds it.
 - **Decisions are never colour alone:** each has an icon and a word. Every screen has
   loading, empty and error states, and a permanent banner says the data is simulated.
+
+## Monitoring and documents
+
+- **Drift.** The service recomputes a drift report every minute from the audit trail:
+  each feature against its training histogram, amount within each category against the
+  previous window, and the decision mix against validation. Anything over a population
+  stability index of 0.25 raises an alarm on the console and in `/metrics`. Calendar
+  features are shown but never alarm, because a day of traffic cannot match a weekly
+  cycle. `docs/design.md` gives the measurements behind each choice.
+- **Load test.** `make load`, or the *Load test* workflow on a GitHub runner, drives the
+  service with Locust at 50, 200 and 500 requests per second and writes client latency
+  and the service's own per-stage timings to `docs/perf/`, with the machine it ran on.
+- **Documents.** [Model card](docs/model_card.md), [validation report](docs/validation_report.md),
+  [design notes](docs/design.md), [runbook](docs/runbook.md) and
+  [journal](docs/journal.md).
 
 ## Configuration
 

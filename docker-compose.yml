@@ -47,6 +47,7 @@ services:
       # Inside the Compose network the stores are reached by service name.
       FRAUDLENS_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       FRAUDLENS_REDIS_URL: redis://redis:6379/0
+      FRAUDLENS_WORKERS: ${FRAUDLENS_WORKERS:-1}
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

@@ -230,6 +230,11 @@ class MemoryAudit:
             counts[label] += 1
         return counts
 
+    async def recent_features(self, limit: int) -> list[tuple[dict[str, float | int | str], str]]:
+        self._check()
+        newest = sorted(self.decisions.values(), key=lambda r: r.created_at or 0, reverse=True)
+        return [(dict(r.features), r.decision) for r in newest[:limit]]
+
 
 class RecordingObserver:
     """Collects what the decision engine reports."""

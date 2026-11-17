@@ -323,6 +323,62 @@ class DispositionSummary(BaseModel):
     """Share of labelled alerts confirmed as fraud."""
 
 
+DriftStatus = Literal["stable", "watch", "alarm", "unknown"]
+
+
+class FeatureDrift(BaseModel):
+    """One feature against its training histogram."""
+
+    feature: str
+    psi: float | None
+    status: DriftStatus
+    cyclical: bool
+    """A calendar feature whose cycle is longer than the window: reported, never alarmed."""
+
+
+class SegmentDrift(BaseModel):
+    """Amount within one category, the live window against the window before it."""
+
+    category: str
+    psi: float | None
+    """``None`` when either window has too few rows in this category to judge."""
+    status: DriftStatus
+    n_live: int
+    n_previous: int
+
+
+class DecisionMixDrift(BaseModel):
+    """The live decision mix against the validation slice's."""
+
+    psi: float | None
+    status: DriftStatus
+    live: dict[str, float]
+    validation: dict[str, float]
+
+
+class DriftAlarm(BaseModel):
+    """One comparison over the alarm level (PSI above 0.25)."""
+
+    kind: Literal["feature", "segment", "decision_mix"]
+    name: str
+    psi: float
+
+
+class DriftReport(BaseModel):
+    """The latest drift report, recomputed in the background."""
+
+    computed_at: datetime
+    model_version: str
+    window: int
+    """Decisions in the live window."""
+    previous_window: int
+    """Decisions in the baseline window just before it."""
+    features: list[FeatureDrift]
+    segments: list[SegmentDrift]
+    decision_mix: DecisionMixDrift
+    alarms: list[DriftAlarm]
+
+
 class MonitoringSummary(BaseModel):
     """The recent behaviour of the service, for the console's monitoring page."""
 
@@ -335,8 +391,8 @@ class MonitoringSummary(BaseModel):
     score_histogram: Histogram
     latency_ms: LatencySummary
     dispositions: DispositionSummary
-    drift: dict[str, float] | None
-    """Population stability index per feature; computed by the drift job (phase 6)."""
+    drift: DriftReport | None
+    """The latest drift report; ``None`` until the first has been computed."""
 
 
 class Health(BaseModel):

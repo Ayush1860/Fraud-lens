@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 
 import type { ModelInfo, MonitoringSummary } from "../api/client";
 import { useModel, useMonitoring } from "../api/queries";
+import { DriftPanel } from "../components/DriftPanel";
 import { Empty, Loaded } from "../components/Status";
 import { numberAt } from "../lib/experiments";
 import { count, money, percent } from "../lib/format";
@@ -139,21 +140,8 @@ function Monitoring({ summary, info }: { summary: MonitoringSummary; info: Model
           every score is near 0, and the tail is what matters.
         </figcaption>
       </figure>
-      <h2>Feature drift</h2>
-      {summary.drift ? (
-        <table className="table" aria-label="Drift">
-          <tbody>
-            {Object.entries(summary.drift).map(([feature, psi]) => (
-              <tr key={feature}>
-                <th scope="row">{feature}</th>
-                <td className="num">{psi.toFixed(3)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <Empty>Population stability per feature arrives with the drift job in phase 6.</Empty>
-      )}
+      <h2>Drift</h2>
+      <DriftPanel drift={summary.drift} />
     </>
   );
 }

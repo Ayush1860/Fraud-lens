@@ -1,0 +1,6 @@
+{
+  "friction_cost": 15.0,
+  "margin_rate": 0.02,
+  "review_capacity_share": 0.01,
+  "review_cost": 4.0
+}

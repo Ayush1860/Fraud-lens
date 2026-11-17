@@ -1,0 +1,37 @@
+{
+  "arm": "A3",
+  "arm_description": "XGBoost, scale_pos_weight = sqrt(negatives / positives)",
+  "best_iteration": 397,
+  "created_at": "2026-11-17T16:23:44+00:00",
+  "fit_device": "cuda",
+  "fit_seconds": 9.7,
+  "frauds": {
+    "gap": 63,
+    "train": 5460,
+    "valid_early": 1151,
+    "valid_late": 832
+  },
+  "git_commit": "089e8dcbcc6de483f6aad4044dc75972b9a1be2c",
+  "params": {
+    "colsample_bytree": 0.6836402902846812,
+    "gamma": 0.2667111090298725,
+    "learning_rate": 0.09395395145220313,
+    "max_depth": 6,
+    "min_child_weight": 2.829842382600611,
+    "reg_lambda": 0.9416680608855234,
+    "subsample": 0.9550427295441364
+  },
+  "raw_data_sha256": {
+    "sparkov/fraudTest.csv": "12d553ab19440c752d2531ee1af44bb64f12cc3d3839f1649f19e81c230545f0",
+    "sparkov/fraudTrain.csv": "fd7139200dbfcbed0b6742bbe05a4f1abce532c4fef20918228a651647a3e75d",
+    "ulb/creditcard.csv": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89"
+  },
+  "rows": {
+    "gap": 11992,
+    "train": 960514,
+    "valid_early": 194501,
+    "valid_late": 129668
+  },
+  "seed": 0,
+  "tuned": true
+}

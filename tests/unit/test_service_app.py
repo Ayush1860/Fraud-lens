@@ -275,3 +275,63 @@ def test_a_summary_without_labels_has_no_precision() -> None:
         "genuine": 0,
         "realised_precision": None,
     }
+
+
+async def test_drift_reaches_the_summary_and_the_metrics(
+    toy_bundle_dir: Path, stores: tuple[MemoryStore, MemoryAudit]
+) -> None:
+    @asynccontextmanager
+    async def connect(_: Settings) -> AsyncIterator[tuple[MemoryStore, MemoryAudit]]:
+        yield stores
+
+    config = settings(toy_bundle_dir).model_copy(
+        update={"drift_window": 3, "drift_interval_s": 3600}
+    )
+    app = create_app(config, connect=connect)  # type: ignore[arg-type]
+    async with (
+        LifespanManager(app) as manager,
+        httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=manager.app),
+            base_url="http://service",
+            headers={"X-API-Key": KEY},
+        ) as http,
+    ):
+        empty = (await http.get("/v1/monitoring/summary")).json()["drift"]
+        assert empty["window"] == 0
+        assert empty["alarms"] == []
+
+        for i in range(6):
+            body = {**BODY, "transaction_id": f"d{i}", "event_time": f"2019-06-01T03:1{i}:00Z"}
+            await http.post("/v1/transactions/score", json=body)
+        stores[1].down = True
+        assert await app.state.service.refresh_drift() is not None  # keeps the last report
+        stores[1].down = False
+        report = await app.state.service.refresh_drift()
+
+        drift = (await http.get("/v1/monitoring/summary")).json()["drift"]
+        metrics = (await http.get("/metrics")).text
+
+    assert report is not None
+    assert drift["window"] == 3
+    assert drift["previous_window"] == 3
+    assert drift["model_version"] == report["model_version"]
+    assert {f["feature"] for f in drift["features"]} >= {"amount", "category"}
+    assert 'fraudlens_drift_psi{kind="feature",name="amount"}' in metrics
+    assert "fraudlens_drift_alarms" in metrics
+
+
+async def test_the_model_scores_on_one_thread_per_process(
+    toy_bundle_dir: Path, stores: tuple[MemoryStore, MemoryAudit]
+) -> None:
+    import json
+
+    @asynccontextmanager
+    async def connect(_: Settings) -> AsyncIterator[tuple[MemoryStore, MemoryAudit]]:
+        yield stores
+
+    app = create_app(settings(toy_bundle_dir), connect=connect)  # type: ignore[arg-type]
+    async with LifespanManager(app):
+        booster = app.state.service.bundle.booster
+        config = json.loads(booster.save_config())
+
+    assert config["learner"]["generic_param"]["nthread"] == "1"
