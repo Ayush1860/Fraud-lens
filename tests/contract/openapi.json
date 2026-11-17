@@ -51,6 +51,17 @@
             "title": "Status",
             "type": "string"
           },
+          "top_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Reason"
+          },
           "transaction_id": {
             "title": "Transaction Id",
             "type": "string"
@@ -66,7 +77,8 @@
           "amount",
           "category",
           "event_time",
-          "created_at"
+          "created_at",
+          "top_reason"
         ],
         "title": "AlertOut",
         "type": "object"
@@ -98,6 +110,165 @@
           "next_cursor"
         ],
         "title": "AlertPage",
+        "type": "object"
+      },
+      "CardTransactionOut": {
+        "description": "One decision on the same card, for the case view's history table.",
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "approve",
+              "review",
+              "block"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "degraded": {
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "event_time": {
+            "format": "date-time",
+            "title": "Event Time",
+            "type": "string"
+          },
+          "risk_score": {
+            "title": "Risk Score",
+            "type": "number"
+          },
+          "transaction_id": {
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "event_time",
+          "amount",
+          "category",
+          "decision",
+          "risk_score",
+          "degraded"
+        ],
+        "title": "CardTransactionOut",
+        "type": "object"
+      },
+      "CostAssumptions": {
+        "description": "The cost assumptions the thresholds were chosen with, in dollars.",
+        "properties": {
+          "friction_cost": {
+            "title": "Friction Cost",
+            "type": "number"
+          },
+          "margin_rate": {
+            "title": "Margin Rate",
+            "type": "number"
+          },
+          "review_capacity_share": {
+            "title": "Review Capacity Share",
+            "type": "number"
+          },
+          "review_cost": {
+            "title": "Review Cost",
+            "type": "number"
+          }
+        },
+        "required": [
+          "review_cost",
+          "margin_rate",
+          "friction_cost",
+          "review_capacity_share"
+        ],
+        "title": "CostAssumptions",
+        "type": "object"
+      },
+      "CurvePoint": {
+        "description": "What happens on the validation slice when ``threshold`` is the alert threshold.",
+        "properties": {
+          "alerts_per_day": {
+            "title": "Alerts Per Day",
+            "type": "number"
+          },
+          "count": {
+            "title": "Count",
+            "type": "number"
+          },
+          "dollar_recall": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dollar Recall"
+          },
+          "fraud_amount": {
+            "title": "Fraud Amount",
+            "type": "number"
+          },
+          "frauds": {
+            "title": "Frauds",
+            "type": "number"
+          },
+          "genuine": {
+            "title": "Genuine",
+            "type": "number"
+          },
+          "genuine_amount": {
+            "title": "Genuine Amount",
+            "type": "number"
+          },
+          "precision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precision"
+          },
+          "recall": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recall"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "threshold",
+          "count",
+          "frauds",
+          "fraud_amount",
+          "genuine",
+          "genuine_amount",
+          "precision",
+          "recall",
+          "dollar_recall",
+          "alerts_per_day"
+        ],
+        "title": "CurvePoint",
         "type": "object"
       },
       "DecisionCounts": {
@@ -336,6 +507,37 @@
           "created_at"
         ],
         "title": "DispositionOut",
+        "type": "object"
+      },
+      "DispositionSummary": {
+        "description": "Analyst labels so far, counting each alert's latest label once.",
+        "properties": {
+          "fraud": {
+            "title": "Fraud",
+            "type": "integer"
+          },
+          "genuine": {
+            "title": "Genuine",
+            "type": "integer"
+          },
+          "realised_precision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realised Precision"
+          }
+        },
+        "required": [
+          "fraud",
+          "genuine",
+          "realised_precision"
+        ],
+        "title": "DispositionSummary",
         "type": "object"
       },
       "ExplanationOut": {
@@ -636,6 +838,9 @@
           "decisions": {
             "$ref": "#/components/schemas/DecisionCounts"
           },
+          "dispositions": {
+            "$ref": "#/components/schemas/DispositionSummary"
+          },
           "drift": {
             "anyOf": [
               {
@@ -672,9 +877,44 @@
           "alert_rate",
           "score_histogram",
           "latency_ms",
+          "dispositions",
           "drift"
         ],
         "title": "MonitoringSummary",
+        "type": "object"
+      },
+      "PricedPair": {
+        "description": "One ``(t_review, t_block)`` pair, by index into ``points``, and its price.",
+        "properties": {
+          "block": {
+            "title": "Block",
+            "type": "integer"
+          },
+          "cost_per_1000": {
+            "title": "Cost Per 1000",
+            "type": "number"
+          },
+          "review": {
+            "title": "Review",
+            "type": "integer"
+          },
+          "review_share": {
+            "title": "Review Share",
+            "type": "number"
+          },
+          "within_capacity": {
+            "title": "Within Capacity",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "review",
+          "block",
+          "cost_per_1000",
+          "review_share",
+          "within_capacity"
+        ],
+        "title": "PricedPair",
         "type": "object"
       },
       "Readiness": {
@@ -935,6 +1175,70 @@
           "contribution"
         ],
         "title": "StoredReasonCode",
+        "type": "object"
+      },
+      "ThresholdLab": {
+        "description": "Everything the threshold lab needs: the curve, every priced pair, the release.",
+        "properties": {
+          "costs": {
+            "$ref": "#/components/schemas/CostAssumptions"
+          },
+          "current_block": {
+            "title": "Current Block",
+            "type": "integer"
+          },
+          "current_review": {
+            "title": "Current Review",
+            "type": "integer"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "fraud_amount": {
+            "title": "Fraud Amount",
+            "type": "number"
+          },
+          "frauds": {
+            "title": "Frauds",
+            "type": "number"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "pairs": {
+            "items": {
+              "$ref": "#/components/schemas/PricedPair"
+            },
+            "title": "Pairs",
+            "type": "array"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/CurvePoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_version",
+          "rows",
+          "days",
+          "frauds",
+          "fraud_amount",
+          "costs",
+          "points",
+          "pairs",
+          "current_review",
+          "current_block"
+        ],
+        "title": "ThresholdLab",
         "type": "object"
       },
       "Thresholds": {
@@ -1235,9 +1539,33 @@
         "summary": "Get Model"
       }
     },
+    "/v1/model/threshold-curve": {
+      "get": {
+        "description": "The validation threshold curve with every threshold pair priced.\n\nPrices come from the same function that chose the released thresholds.",
+        "operationId": "get_threshold_curve_v1_model_threshold_curve_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdLab"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Threshold Curve"
+      }
+    },
     "/v1/monitoring/summary": {
       "get": {
-        "description": "Decision mix, score histogram and latency over the newest 10,000 decisions.",
+        "description": "Decision mix, score histogram, latency and analyst labels.\n\nEverything except the labels covers the newest 10,000 decisions.",
         "operationId": "get_monitoring_summary_v1_monitoring_summary_get",
         "responses": {
           "200": {
@@ -1347,6 +1675,68 @@
           }
         ],
         "summary": "Get Transaction"
+      }
+    },
+    "/v1/transactions/{transaction_id}/card-history": {
+      "get": {
+        "description": "The card's decisions up to and including this one, newest first.",
+        "operationId": "get_card_history_v1_transactions__transaction_id__card_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Transaction Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CardTransactionOut"
+                  },
+                  "title": "Response Get Card History V1 Transactions  Transaction Id  Card History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Card History"
       }
     },
     "/v1/transactions/{transaction_id}/explanation": {
