@@ -1,0 +1,1399 @@
+{
+  "components": {
+    "schemas": {
+      "AlertOut": {
+        "description": "One alert in the queue.",
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "approve",
+              "review",
+              "block"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "event_time": {
+            "format": "date-time",
+            "title": "Event Time",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "number"
+          },
+          "risk_score": {
+            "title": "Risk Score",
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "transaction_id": {
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "transaction_id",
+          "priority",
+          "status",
+          "decision",
+          "risk_score",
+          "amount",
+          "category",
+          "event_time",
+          "created_at"
+        ],
+        "title": "AlertOut",
+        "type": "object"
+      },
+      "AlertPage": {
+        "description": "One page of alerts and the cursor for the next.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "AlertPage",
+        "type": "object"
+      },
+      "DecisionCounts": {
+        "description": "How the recent decisions split.",
+        "properties": {
+          "approve": {
+            "title": "Approve",
+            "type": "integer"
+          },
+          "block": {
+            "title": "Block",
+            "type": "integer"
+          },
+          "degraded": {
+            "title": "Degraded",
+            "type": "integer"
+          },
+          "review": {
+            "title": "Review",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "approve",
+          "review",
+          "block",
+          "degraded"
+        ],
+        "title": "DecisionCounts",
+        "type": "object"
+      },
+      "DecisionRecordOut": {
+        "description": "A stored decision with the feature vector it was made from.",
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          },
+          "card_id": {
+            "title": "Card Id",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "approve",
+              "review",
+              "block"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "degraded": {
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "event_time": {
+            "format": "date-time",
+            "title": "Event Time",
+            "type": "string"
+          },
+          "features": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Features",
+            "type": "object"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "margin": {
+            "title": "Margin",
+            "type": "number"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "reason_codes": {
+            "items": {
+              "$ref": "#/components/schemas/StoredReasonCode"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "risk_score": {
+            "title": "Risk Score",
+            "type": "number"
+          },
+          "t_block": {
+            "title": "T Block",
+            "type": "number"
+          },
+          "t_review": {
+            "title": "T Review",
+            "type": "number"
+          },
+          "transaction_id": {
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "card_id",
+          "event_time",
+          "amount",
+          "category",
+          "features",
+          "margin",
+          "risk_score",
+          "decision",
+          "t_review",
+          "t_block",
+          "model_version",
+          "reason_codes",
+          "degraded",
+          "latency_ms",
+          "created_at"
+        ],
+        "title": "DecisionRecordOut",
+        "type": "object"
+      },
+      "DispositionIn": {
+        "additionalProperties": false,
+        "description": "An analyst's label for an alert.",
+        "properties": {
+          "analyst": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Analyst",
+            "type": "string"
+          },
+          "label": {
+            "enum": [
+              "fraud",
+              "genuine"
+            ],
+            "title": "Label",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "label",
+          "analyst"
+        ],
+        "title": "DispositionIn",
+        "type": "object"
+      },
+      "DispositionOut": {
+        "description": "A recorded label.",
+        "properties": {
+          "alert_id": {
+            "title": "Alert Id",
+            "type": "integer"
+          },
+          "analyst": {
+            "title": "Analyst",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "label": {
+            "enum": [
+              "fraud",
+              "genuine"
+            ],
+            "title": "Label",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "id",
+          "alert_id",
+          "label",
+          "analyst",
+          "note",
+          "created_at"
+        ],
+        "title": "DispositionOut",
+        "type": "object"
+      },
+      "ExplanationOut": {
+        "description": "The full explanation of a stored decision, recomputed from its stored features.",
+        "properties": {
+          "bias": {
+            "title": "Bias",
+            "type": "number"
+          },
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureContribution"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupContribution"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "margin": {
+            "title": "Margin",
+            "type": "number"
+          },
+          "mitigating": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StoredReasonCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "reason_codes": {
+            "items": {
+              "$ref": "#/components/schemas/StoredReasonCode"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "risk_score": {
+            "title": "Risk Score",
+            "type": "number"
+          },
+          "transaction_id": {
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "model_version",
+          "bias",
+          "margin",
+          "risk_score",
+          "contributions",
+          "groups",
+          "reason_codes",
+          "mitigating"
+        ],
+        "title": "ExplanationOut",
+        "type": "object"
+      },
+      "FeatureContribution": {
+        "description": "One feature's value and its contribution to the margin, in log-odds.",
+        "properties": {
+          "contribution": {
+            "title": "Contribution",
+            "type": "number"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "feature",
+          "value",
+          "contribution"
+        ],
+        "title": "FeatureContribution",
+        "type": "object"
+      },
+      "GroupContribution": {
+        "description": "One reason group's summed contribution, in log-odds.",
+        "properties": {
+          "contribution": {
+            "title": "Contribution",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "contribution"
+        ],
+        "title": "GroupContribution",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "description": "Liveness.",
+        "properties": {
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "Histogram": {
+        "description": "Counts between consecutive edges; the last bin includes its right edge.",
+        "properties": {
+          "counts": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "array"
+          },
+          "edges": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Edges",
+            "type": "array"
+          }
+        },
+        "required": [
+          "edges",
+          "counts"
+        ],
+        "title": "Histogram",
+        "type": "object"
+      },
+      "LatencySummary": {
+        "description": "Decision latency percentiles, in milliseconds.",
+        "properties": {
+          "p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50"
+          },
+          "p95": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95"
+          },
+          "p99": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P99"
+          }
+        },
+        "required": [
+          "p50",
+          "p95",
+          "p99"
+        ],
+        "title": "LatencySummary",
+        "type": "object"
+      },
+      "ModelInfo": {
+        "description": "The active model release.",
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "feature_types": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Feature Types",
+            "type": "array"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "manifest_sha256": {
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": true,
+            "title": "Metrics",
+            "type": "object"
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/Thresholds"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "manifest_sha256",
+          "thresholds",
+          "features",
+          "feature_types",
+          "categories",
+          "metrics"
+        ],
+        "title": "ModelInfo",
+        "type": "object"
+      },
+      "MonitoringSummary": {
+        "description": "The recent behaviour of the service, for the console's monitoring page.",
+        "properties": {
+          "alert_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Rate"
+          },
+          "decisions": {
+            "$ref": "#/components/schemas/DecisionCounts"
+          },
+          "drift": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drift"
+          },
+          "latency_ms": {
+            "$ref": "#/components/schemas/LatencySummary"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "score_histogram": {
+            "$ref": "#/components/schemas/Histogram"
+          },
+          "window": {
+            "title": "Window",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "window",
+          "model_version",
+          "decisions",
+          "alert_rate",
+          "score_histogram",
+          "latency_ms",
+          "drift"
+        ],
+        "title": "MonitoringSummary",
+        "type": "object"
+      },
+      "Readiness": {
+        "description": "Readiness: true once the bundle is verified and the audit store answers.",
+        "properties": {
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "postgres": {
+            "title": "Postgres",
+            "type": "boolean"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "redis": {
+            "title": "Redis",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ready",
+          "model_version",
+          "postgres",
+          "redis"
+        ],
+        "title": "Readiness",
+        "type": "object"
+      },
+      "ReasonCodeOut": {
+        "description": "One reason: a stable id, its wording, and its share of the upward push (0 to 1).",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "share"
+        ],
+        "title": "ReasonCodeOut",
+        "type": "object"
+      },
+      "ScoreRequest": {
+        "additionalProperties": false,
+        "description": "One transaction to score.\n\n``card_id`` must be an HMAC token (``c_`` and 16 hex characters), so a raw card number\nis rejected at the door. An unknown ``category`` is scored as ``unknown``. Optional\nfields that are missing are passed to the model as missing values.",
+        "properties": {
+          "amount": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000000.0,
+            "title": "Amount",
+            "type": "number"
+          },
+          "card_id": {
+            "pattern": "^c_[0-9a-f]{16}$",
+            "title": "Card Id",
+            "type": "string"
+          },
+          "cardholder_age": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cardholder Age"
+          },
+          "category": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Category",
+            "type": "string"
+          },
+          "city_pop": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Pop"
+          },
+          "event_time": {
+            "format": "date-time",
+            "title": "Event Time",
+            "type": "string"
+          },
+          "home_lat": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Lat"
+          },
+          "home_long": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Long"
+          },
+          "merchant_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Merchant Id",
+            "type": "string"
+          },
+          "merchant_lat": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant Lat"
+          },
+          "merchant_long": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant Long"
+          },
+          "transaction_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "card_id",
+          "event_time",
+          "amount",
+          "category",
+          "merchant_id"
+        ],
+        "title": "ScoreRequest",
+        "type": "object"
+      },
+      "ScoreResponse": {
+        "description": "The decision for one transaction.",
+        "properties": {
+          "decision": {
+            "enum": [
+              "approve",
+              "review",
+              "block"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "degraded": {
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "reason_codes": {
+            "items": {
+              "$ref": "#/components/schemas/ReasonCodeOut"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
+          "risk_score": {
+            "title": "Risk Score",
+            "type": "number"
+          },
+          "transaction_id": {
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "risk_score",
+          "decision",
+          "model_version",
+          "degraded",
+          "reason_codes",
+          "latency_ms"
+        ],
+        "title": "ScoreResponse",
+        "type": "object"
+      },
+      "StoredReasonCode": {
+        "description": "A reason as stored, with its contribution in log-odds.",
+        "properties": {
+          "contribution": {
+            "title": "Contribution",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "share",
+          "contribution"
+        ],
+        "title": "StoredReasonCode",
+        "type": "object"
+      },
+      "Thresholds": {
+        "description": "Decision thresholds on the calibrated probability.",
+        "properties": {
+          "t_block": {
+            "title": "T Block",
+            "type": "number"
+          },
+          "t_review": {
+            "title": "T Review",
+            "type": "number"
+          }
+        },
+        "required": [
+          "t_review",
+          "t_block"
+        ],
+        "title": "Thresholds",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "summary": "Scores card transactions, explains flagged ones, and records every decision.",
+    "title": "FraudLens scoring service",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/healthz": {
+      "get": {
+        "description": "Liveness: the process is up.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "description": "Readiness: the bundle verified at start-up and Postgres answers.\n\nRedis being down does not make the service unready: it scores degraded instead.",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readyz"
+      }
+    },
+    "/v1/alerts": {
+      "get": {
+        "description": "Alerts ordered by priority (risk score times amount), highest first.\n\nPass the returned ``next_cursor`` back as ``cursor`` for the next page.",
+        "operationId": "list_alerts_v1_alerts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "closed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "decision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "review",
+                    "block"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Decision"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Alerts"
+      }
+    },
+    "/v1/alerts/{alert_id}/disposition": {
+      "post": {
+        "description": "Record an analyst's label and close the alert. Labels are append-only.",
+        "operationId": "add_disposition_v1_alerts__alert_id__disposition_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Alert Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DispositionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispositionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Add Disposition"
+      }
+    },
+    "/v1/model": {
+      "get": {
+        "description": "The active release: version, manifest hash, thresholds, features and metrics.",
+        "operationId": "get_model_v1_model_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Model"
+      }
+    },
+    "/v1/monitoring/summary": {
+      "get": {
+        "description": "Decision mix, score histogram and latency over the newest 10,000 decisions.",
+        "operationId": "get_monitoring_summary_v1_monitoring_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoringSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Monitoring Summary"
+      }
+    },
+    "/v1/transactions/score": {
+      "post": {
+        "description": "Score one transaction and decide. Idempotent on ``transaction_id``.\n\nA retry with the same ``transaction_id`` returns the original decision, with the\n``Idempotent-Replay: true`` header, and does not touch the card's history.",
+        "operationId": "score_transaction_v1_transactions_score_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Score Transaction"
+      }
+    },
+    "/v1/transactions/{transaction_id}": {
+      "get": {
+        "description": "The stored decision for one transaction, with its feature vector.",
+        "operationId": "get_transaction_v1_transactions__transaction_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Transaction Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Transaction"
+      }
+    },
+    "/v1/transactions/{transaction_id}/explanation": {
+      "get": {
+        "description": "Every feature's contribution and the reason codes, recomputed from stored features.\n\nContributions are in log-odds. The result is cached per model version.",
+        "operationId": "get_explanation_v1_transactions__transaction_id__explanation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Transaction Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplanationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Explanation"
+      }
+    }
+  }
+}
