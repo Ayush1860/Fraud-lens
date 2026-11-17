@@ -22,8 +22,8 @@ until it is generated from an artefact by `make report`.
 | 1 | Data checks, PII handling, time splits, the single feature definition | Done |
 | 2 | Imbalance experiments, tuning, calibration, thresholds, model bundle | Done |
 | 3 | Contributions and reason codes | Done |
-| 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Next |
-| 5 | React analyst console | Planned |
+| 4 | Scoring service: Redis feature store, Postgres audit trail, idempotency | Done |
+| 5 | React analyst console | Next |
 | 6 | Monitoring, load test, documents | Planned |
 | 7 | AWS demo from Terraform | Planned |
 
@@ -46,7 +46,7 @@ Requirements: [uv](https://docs.astral.sh/uv/), Docker with Compose, and GNU Mak
 
 ```bash
 make setup   # install locked dependencies, git hooks, and create .env from configs/.env.example
-make up      # start Postgres and Redis and wait until both are healthy
+make up      # start Postgres, Redis and the service, and wait until all are healthy
 make test    # unit, property and parity tests with the 85% coverage gate
 ```
 
@@ -68,9 +68,20 @@ make evaluate         # the one-time test-set evaluation, then docs/results/repo
 Training is heavy on a laptop CPU. `notebooks/colab_training.ipynb` runs the same steps on
 a free Google Colab GPU and packages the results to bring back.
 
+Then serve and replay:
+
+```bash
+make up                # the service on http://127.0.0.1:8000, with Postgres and Redis
+make replay            # 5,000 test-period transactions at 50 per second, history warmed
+make test-integration  # idempotency, outages, concurrency and parity against real stores
+```
+
+The service loads the newest bundle under `models/`, which is gitignored: train one, or
+copy a released bundle there. Without one the service refuses to start.
+`make serve` runs the service outside Docker instead.
+
 Other targets: `make lint`, `make typecheck`, `make format`, `make down`, `make help`.
-The remaining pipeline targets (`serve`, `replay`, `load`, `report`) are stubs that fail
-with the phase they arrive in.
+The remaining targets (`load`, `report`) are stubs that fail with the phase they arrive in.
 
 Without Make, run the underlying commands directly, for example `uv sync --locked`,
 `uv run python -m fraudlens.data.download` and
@@ -156,11 +167,54 @@ own values: for example "Amount is 20.9 times this card's 30-day average of $46"
   stability, global ranking and monthly explanation drift to
   `docs/results/explainability.json`. `notebooks/02_shap_global.ipynb` plots them.
 
+## Scoring service
+
+`POST /v1/transactions/score` takes one transaction and returns a calibrated risk score,
+**approve**, **review** or **block**, and reason codes for anything flagged. OpenAPI docs
+are at `/docs` while the service runs; every endpoint except the health checks needs the
+`X-API-Key` header.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /v1/transactions/score` | Score and decide; idempotent on `transaction_id` |
+| `GET /v1/transactions/{id}` | The stored decision and the feature vector it was made from |
+| `GET /v1/transactions/{id}/explanation` | Every feature's contribution, recomputed from stored features |
+| `GET /v1/alerts` | Open alerts by score times amount, with cursor paging |
+| `POST /v1/alerts/{id}/disposition` | An analyst's label; append-only |
+| `GET /v1/model`, `GET /v1/monitoring/summary` | The active release; recent decision mix and latency |
+| `GET /healthz`, `/readyz`, `/metrics` | Liveness, readiness, Prometheus metrics |
+
+The hot path (`src/fraudlens/service/decision.py`, free of web-framework code):
+
+1. Claim the `transaction_id` in Redis with `SET NX`. A retry gets the original decision
+   back with `Idempotent-Replay: true`, and the card's history is not touched.
+2. Under a per-card Redis lock, read the card's history, compute features with the same
+   `compute_features` training used, score, calibrate and apply the thresholds.
+3. Word reason codes for a review or block only.
+4. Insert the decision, with its feature vector, into Postgres. If that fails the request
+   fails with 503: no decision leaves without a record.
+5. Append the transaction to the card's history, trimmed to 30 days and 500 entries.
+
+Failure behaviour: if Redis is down or slow, the transaction is scored on its own fields,
+marked `degraded: true`, and any amount above a configured limit goes to review. If
+Postgres is down, the service answers 503 and the caller retries with the same id. A
+bundle whose files do not match its manifest stops the service from starting.
+
+The audit tables are append-only, enforced by database triggers, and a stored decision
+reproduces its score bit for bit from its feature vector. `docs/design.md` explains the
+choices and the accepted limits.
+
+The replay client (`python -m fraudlens.tools.replay`) reads the public test file,
+turns card numbers into HMAC tokens before anything is sent, and posts transactions in
+time order at a fixed rate or a multiple of real time. `--inject-drift shopping_net=1.5`
+inflates one category's amounts part-way through, to trigger the drift alarm on demand.
+
 ## Configuration
 
 Settings are read from `FRAUDLENS_*` environment variables, or from a `.env` file in the
 repository root. `configs/.env.example` lists every variable with local-only placeholder
-values. Secrets have no defaults: the process refuses to start without them.
+values, and the service's optional timeouts and limits with their defaults. Secrets have
+no defaults: the process refuses to start without them.
 
 ## Layout
 

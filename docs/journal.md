@@ -172,3 +172,27 @@ Read from `docs/results/report.md` and the bundle `2026-11-17.1`.
   leading reason ids are frozen in `tests/model/golden_cases.json`. Nine lead with the
   amount group, five with purchase pace, four with time and category, and one each with
   travel and novelty.
+
+## 2026-11-18 — Phase 4 scoring service
+
+- **Decision:** with Redis down, history features are sent to the model as missing (NaN),
+  not as the zeros an empty history gives. Zero would tell the model "first purchase on
+  this card", which is a strong signal in its own right. The rule lives in
+  `definitions.py` as `transaction_only_features`, beside the one feature definition.
+- **Bug (found by the degraded-path test):** wording a reason for a degraded decision
+  crashed, because the pace template turned a missing count into an integer. Pace and
+  novelty are now not worded when history is unknown; the golden cases are unaffected.
+- **Decision:** idempotency has two layers. Redis answers ordinary retries quickly; the
+  Postgres primary key catches retries after the Redis key expires or while Redis is down.
+- **Decision:** append-only is enforced by triggers rather than grants. Locally a single
+  database user owns the tables, and an owner can always UPDATE its own table; a trigger
+  stops it anyway.
+- **Decision:** the replay client reads the raw test CSV and tokenises cards itself, as
+  the plan asks, instead of reading `data/processed/test.parquet`, which stays reserved
+  for the one-time evaluation.
+- **Testing without Docker:** this laptop has no Docker, so the integration tests ran
+  locally against an embedded Postgres 16 and an in-process fakeredis, and run in CI
+  against Postgres 18 and Redis 8 containers. Fakeredis's TCP server mode was unusable
+  here: it dropped connections around Lua script loads and rejected valid lock releases.
+- **Check:** 2,000 synthetic transactions replayed through the service produce stored
+  features equal to the batch builder's, and 1,000 stored decisions re-score bit for bit.
